@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  discogsdash:
+    build: .
+    container_name: discogsdash
+    ports:
+      - "3000:3000"
+    volumes:
+      - discogsdash-data:/app/.db
+    env_file:
+      - .env # Expects a .env file in the root with DISCOGS_TOKEN=your_token
+    restart: unless-stopped
+
+volumes:
+  discogsdash-data:
+    driver: local # Or specify another driver if needed

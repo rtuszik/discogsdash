@@ -72,7 +72,9 @@ function initDbSchema(db: Database.Database): void {
       folder_id INTEGER,
       rating INTEGER,                  -- User's rating (0-5)
       notes TEXT,
-      estimated_value REAL             -- Store latest known value per item if available/desired
+      condition TEXT,                  -- User-defined condition (e.g., "Mint (M)", "Near Mint (NM or M-)")
+      suggested_value REAL,            -- Latest value suggestion based on condition
+      last_value_check TEXT            -- ISO 8601 timestamp of the last price check
     );
   `);
   // Add indexes for potentially queried columns

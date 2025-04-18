@@ -24,7 +24,7 @@ export async function makeDiscogsRequest<T>(
   const { method = 'GET', headers = {}, body } = options;
 
   const defaultHeaders: Record<string, string> = {
-    'User-Agent': 'DiscogsDashApp/0.1 (+https://github.com/your-repo)', // Replace with your app details
+    'User-Agent': 'DiscogsDashApp/0.1 (+https://github.com/rtuszik/discogsdash)', // Discogs requires a User-Agent
     'Authorization': `Discogs token=${token}`,
     'Content-Type': 'application/json', // Default, adjust if needed
   };
@@ -65,15 +65,48 @@ export async function makeDiscogsRequest<T>(
   }
 }
 
-// Example Usage (will be used in API routes later):
-/*
-async function getUserProfile(username: string, token: string) {
+
+// --- Specific API Call Functions ---
+
+// Define the expected structure for a single price suggestion
+interface PriceSuggestion {
+  currency: string;
+  value: number;
+}
+
+// Define the expected structure for the API response
+// Keys are condition strings like "Mint (M)", "Near Mint (NM or M-)", etc.
+type PriceSuggestionsResponse = Record<string, PriceSuggestion>;
+
+/**
+ * Fetches suggested market prices for a specific release based on condition.
+ *
+ * @param releaseId - The Discogs ID of the release.
+ * @param token - The user's Discogs Personal Access Token.
+ * @returns A Promise resolving to an object containing price suggestions keyed by condition,
+ *          or null if no suggestions are found (e.g., 404 response).
+ * @throws An error if the request fails for other reasons (e.g., network issue, invalid token).
+ */
+export async function fetchPriceSuggestions(
+  releaseId: number,
+  token: string
+): Promise<PriceSuggestionsResponse | null> {
+  const endpoint = `/marketplace/price_suggestions/${releaseId}`;
   try {
-    const profile = await makeDiscogsRequest<any>(`/users/${username}`, token);
-    console.log('User Profile:', profile);
-    return profile;
-  } catch (error) {
-    console.error('Failed to get user profile:', error);
+    // Use the generic request function with the specific type
+    const suggestions = await makeDiscogsRequest<PriceSuggestionsResponse>(endpoint, token);
+    return suggestions;
+  } catch (error: any) {
+    // Discogs API might return 404 if no suggestions exist, which makeDiscogsRequest throws an error for.
+    // We want to treat 404 specifically as "no suggestions found" (null) rather than a hard error.
+    // We need to check if the error message indicates a 404 status.
+    // Note: This relies on the error message format from makeDiscogsRequest.
+    if (error instanceof Error && error.message.includes('status: 404')) {
+      console.log(`No price suggestions found for release ID ${releaseId}.`);
+      return null; // Return null specifically for 404 errors
+    }
+    // Re-throw other errors (like auth errors, network issues, etc.)
+    console.error(`Error fetching price suggestions for release ID ${releaseId}:`, error);
+    throw error;
   }
 }
-*/

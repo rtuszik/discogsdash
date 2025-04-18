@@ -5,11 +5,14 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
+    "noEmit": false, // Allow JS output
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "esnext", // Revert for Next.js compatibility
+    "moduleResolution": "bundler", // Revert for Next.js path aliases
     "resolveJsonModule": true,
+    "baseUrl": ".", // Explicitly set baseUrl for paths
+    "outDir": "./dist", // Keep for script compilation (might need separate tsconfig later)
+    "rootDir": ".", // Set rootDir to project root
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
@@ -22,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], // Revert include
+  "exclude": ["node_modules", "dist"] // Keep dist excluded
 }

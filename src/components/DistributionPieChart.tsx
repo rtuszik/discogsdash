@@ -15,18 +15,18 @@ interface DistributionPieChartProps {
   syncing?: boolean;
 }
 
-// Define grayscale colors for pie slices (adjust as needed)
-const GRAYSCALE_COLORS = [
-  '#FFFFFF', // White
-  '#F3F4F6', // gray-100
-  '#E5E7EB', // gray-200
-  '#D1D5DB', // gray-300
-  '#9CA3AF', // gray-400
-  '#6B7280', // gray-500
-  '#4B5563', // gray-600
-  '#374151', // gray-700
-  '#1F2937', // gray-800
-  '#111827', // gray-900
+// Define vibrant colors for pie slices suitable for a dark theme
+const SLEEK_COLORS = [
+  '#3b82f6', // blue-500
+  '#8b5cf6', // violet-500
+  '#10b981', // emerald-500
+  '#ec4899', // pink-500
+  '#f97316', // orange-500
+  '#06b6d4', // cyan-500
+  '#f59e0b', // amber-500
+  '#6366f1', // indigo-500
+  '#84cc16', // lime-500
+  '#d946ef', // fuchsia-500
 ];
 
 export default function DistributionPieChart({
@@ -58,7 +58,7 @@ export default function DistributionPieChart({
 
   if (syncing) {
      return (
-        <div className="flex items-center justify-center h-full min-h-[300px] text-gray-500">
+        <div className="flex items-center justify-center h-full min-h-[300px] text-neutral-500"> {/* Updated text */}
             Syncing data... Chart will update shortly.
         </div>
      );
@@ -66,7 +66,7 @@ export default function DistributionPieChart({
 
   if (processedData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px] text-gray-500">
+      <div className="flex items-center justify-center h-full min-h-[300px] text-neutral-500"> {/* Updated text */}
         No data available for this chart. Try syncing first.
       </div>
     );
@@ -74,7 +74,7 @@ export default function DistributionPieChart({
 
   return (
     <div className="h-full min-h-[300px] w-full flex flex-col items-center">
-      {title && <h3 className="text-lg font-semibold mb-4 text-center text-white">{title}</h3>}
+      {title && <h3 className="text-lg font-semibold mb-4 text-center text-neutral-100">{title}</h3>} {/* Updated text */}
       <ResponsiveContainer width="100%" height={250}>
         <PieChart>
           <Pie
@@ -86,14 +86,15 @@ export default function DistributionPieChart({
             outerRadius={80}
             fill="#8884d8" // Default fill, overridden by Cell
             dataKey="value"
-            stroke="#1F2937" // gray-800 border between slices
+            stroke="#262626" // neutral-800 border between slices
           >
             {processedData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={GRAYSCALE_COLORS[index % GRAYSCALE_COLORS.length]} />
+              <Cell key={`cell-${index}`} fill={SLEEK_COLORS[index % SLEEK_COLORS.length]} /> // Use new colors
             ))}
           </Pie>
           <Tooltip
-             contentStyle={{ backgroundColor: '#111827', border: '1px solid #4B5563', color: '#D1D5DB' }} // gray-900 bg, gray-600 border, gray-300 text
+             contentStyle={{ backgroundColor: '#171717', border: '1px solid #525252', color: '#f5f5f5' }} // neutral-900 bg, neutral-600 border, neutral-100 text (even lighter)
+             itemStyle={{ color: '#f5f5f5' }} // Explicitly set item text color to neutral-100
              formatter={(value: number, name: string) => [`${value} items`, name]} // Tooltip content
            />
            {/* Adjust legend position and style */}
@@ -101,7 +102,7 @@ export default function DistributionPieChart({
              layout="vertical"
              verticalAlign="middle"
              align="right"
-             wrapperStyle={{ color: '#9CA3AF', fontSize: '12px', lineHeight: '20px' }} // gray-400 legend text
+             wrapperStyle={{ color: '#a3a3a3', fontSize: '12px', lineHeight: '20px' }} // neutral-400 legend text
              iconSize={10}
            />
         </PieChart>

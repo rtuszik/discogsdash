@@ -15,7 +15,16 @@ const nextConfig: NextConfig = {
     // Important: return the modified config
     return config;
   },
-  /* other config options can go here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.discogs.com',
+        port: '',
+        pathname: '/**', // Allow any path under this hostname
+      },
+    ],
+  },
 };
 
 export default nextConfig;

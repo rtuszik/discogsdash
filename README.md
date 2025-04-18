@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DiscogsDash - Your Personal Discogs Dashboard
 
-## Getting Started
+DiscogsDash provides a personalized dashboard to visualize and analyze your Discogs music collection. Gain insights into your collection's value, distribution, and trends over time.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+*   **Collection Overview:** See key statistics about your collection size and estimated value.
+*   **Value Trends:** Track the estimated market value of your collection over time.
+*   **Genre/Style Distribution:** Visualize the breakdown of your collection by genre and style.
+*   **Most Valuable Items:** Quickly identify the most valuable records in your collection based on Discogs market data.
+*   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs periodically).
+*   **Self-Hosted:** Run DiscogsDash on your own server using Docker.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*   [Next.js](https://nextjs.org/) (React Framework)
+*   [TypeScript](https://www.typescriptlang.org/)
+*   [Tailwind CSS](https://tailwindcss.com/)
+*   [Recharts](https://recharts.org/) (Charting Library)
+*   [SQLite](https://www.sqlite.org/index.html) (Database)
+*   [Node-Cron](https://github.com/node-cron/node-cron) (Scheduler)
+*   [PM2](https://pm2.keymetrics.io/) (Process Manager within Docker)
+*   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configuration
 
-## Learn More
+DiscogsDash requires a **Discogs Personal Access Token** to access your collection data via the Discogs API.
 
-To learn more about Next.js, take a look at the following resources:
+1.  Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers).
+2.  Generate a new Personal Access Token.
+3.  Copy this token. You will need it for both development and self-hosting setups.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Important:** Keep your token secure and do not commit it directly into your repository.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development Setup
 
-## Deploy on Vercel
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/rtuszik/discogsdash.git
+    cd discogsdash
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Create a local environment file:**
+    Create a file named `.env.local` in the project root.
+4.  **Add your Discogs token to `.env.local`:**
+    ```env
+    DISCOGS_TOKEN=your_discogs_personal_access_token_here
+    ```
+5.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+6.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Self-Hosting (Docker Compose)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1.  **Prerequisites:**
+    *   [Docker](https://docs.docker.com/get-docker/) installed.
+    *   [Docker Compose](https://docs.docker.com/compose/install/) installed.
+2.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/rtuszik/discogsdash.git
+    cd discogsdash
+    ```
+3.  **Create an environment file:**
+    Create a file named `.env` in the project root.
+4.  **Add your Discogs token to `.env`:**
+    ```env
+    DISCOGS_TOKEN=your_discogs_personal_access_token_here
+    ```
+5.  **Start the application:**
+    ```bash
+    docker-compose up -d
+    ```
+    This command will build the Docker image (if not already built) and start the DiscogsDash container in the background.
+6.  Access the application at `http://<your-server-ip>:3000`.
+
+**Data Persistence:** Your collection data (SQLite database) is stored in a Docker volume named `discogsdash-data`. This ensures your data persists even if you stop and remove the container.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (You may need to create this file if one doesn't exist).
+
+---
+
+*Disclaimer: This project uses the Discogs API but is not affiliated with, sponsored, or endorsed by Discogs.*
