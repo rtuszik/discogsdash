@@ -61,14 +61,14 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
     setSetting('sync_total_items', '0');
     setSetting('sync_last_error', ''); // Clear previous errors
 
-    // 1. Get Credentials
-  const username = getSetting('discogs_username');
-  const token = getSetting('discogs_token');
+    // 1. Get Credentials from Environment Variables
+  const username = process.env.DISCOGS_USERNAME;
+  const token = process.env.DISCOGS_TOKEN;
 
   if (!username || !token) {
-    const errorMsg = 'Sync failed: Discogs username or token not configured.';
+    const errorMsg = 'Sync failed: DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.';
     console.error(errorMsg);
-    setSetting('sync_status', 'error');
+    setSetting('sync_status', 'error'); // Still use DB for status tracking
     setSetting('sync_last_error', errorMsg);
     throw new Error(errorMsg);
   }
@@ -84,7 +84,8 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
   while (nextUrl) {
     pageCount++;
     console.log(`Fetching collection page ${pageCount}: ${nextUrl}`);
-    if (!token) throw new Error("Discogs token is missing."); // Should not happen due to check above, but belts and braces
+    // Re-check token here as it's critical for the loop
+    if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
 
     const response: DiscogsCollectionResponse = await makeDiscogsRequest<DiscogsCollectionResponse>(nextUrl, token);
     if (response && response.releases) {
@@ -121,7 +122,8 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
   try {
       const valueEndpoint = `/users/${username}/collection/value`;
       console.log(`Fetching overall collection value: ${valueEndpoint}`);
-      if (!token) throw new Error("Discogs token is missing.");
+      // Re-check token here as well
+      if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
       valueResponse = await makeDiscogsRequest<DiscogsCollectionValue>(valueEndpoint, token);
       console.log('Fetched overall collection value:', valueResponse);
   } catch (valueError) {
@@ -182,7 +184,8 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
       let lastCheckTimestamp: string | null = null;
 
       try {
-          if (!token) throw new Error("Discogs token is missing.");
+          // Re-check token before fetching price suggestions
+          if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
           console.log(`(${processedCount}/${allReleases.length}) Fetching price for release ID: ${release.id}`);
           const suggestions = await fetchPriceSuggestions(release.id, token);
           lastCheckTimestamp = new Date().toISOString();

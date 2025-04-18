@@ -65,13 +65,18 @@ DiscogsDash requires a **Discogs Personal Access Token** to access your collecti
     git clone https://github.com/rtuszik/discogsdash.git
     cd discogsdash
     ```
-3.  **Create an environment file:**
-    Create a file named `.env` in the project root.
-4.  **Add your Discogs token to `.env`:**
-    ```env
-    DISCOGS_TOKEN=your_discogs_personal_access_token_here
+3.  **Configure `docker-compose.yml`:**
+    Open the `docker-compose.yml` file and replace the placeholder values in the `environment` section with your actual Discogs token and username:
+    ```yaml
+    services:
+      discogsdash:
+        # ... other settings
+        environment:
+          - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # <-- Replace this
+          - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # <-- Replace this
+        # ... other settings
     ```
-5.  **Start the application:**
+4.  **Start the application:**
     ```bash
     docker-compose up -d
     ```

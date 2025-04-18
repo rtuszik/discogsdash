@@ -8,8 +8,10 @@ services:
       - "3000:3000"
     volumes:
       - discogsdash-data:/app/.db
-    env_file:
-      - .env # Expects a .env file in the root with DISCOGS_TOKEN=your_token
+    environment:
+      - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
+      - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+      # - NODE_ENV=production # Already set in Dockerfile, but can be explicit here if needed
     restart: unless-stopped
 
 volumes:
