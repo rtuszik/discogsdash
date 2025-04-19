@@ -35,7 +35,7 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
-COPY --from=builder /app/dist ./dist # Copy compiled scheduler scripts
+COPY --from=builder /app/dist/src ./dist/src # Copy only the src subdir within dist containing compiled scripts
 
 # Create the database directory (should ideally be a volume mount)
 RUN mkdir -p .db && chown node:node .db
