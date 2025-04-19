@@ -17,8 +17,9 @@ COPY . .
 # Set environment variable for Next.js build
 ENV NODE_ENV=production
 
-# Run the build command (includes tsc compilation via build:scripts)
-RUN npm run build
+# Run the build command in separate steps
+RUN npm run build:scripts # Compile TS scripts first to ./dist
+RUN next build # Then run the Next.js build
 
 # Stage 3: Production image
 FROM node:20-alpine AS runner
@@ -35,7 +36,8 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
-COPY --from=builder /app/dist/src ./dist/src # Copy only the src subdir within dist containing compiled scripts
+RUN mkdir -p ./dist # Explicitly create dist directory before copying into it
+COPY --from=builder /app/dist ./dist # Copy the whole dist directory
 
 # Create the database directory (should ideally be a volume mount)
 RUN mkdir -p .db && chown node:node .db
