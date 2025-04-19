@@ -15,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variable for Next.js build
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Run the build command (includes tsc compilation via build:scripts)
 RUN npm run build
@@ -24,7 +24,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Install pm2 globally
 RUN npm install pm2 -g
@@ -48,7 +48,7 @@ USER node
 
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
 
 # Start the application using pm2
 CMD ["pm2-runtime", "start", "ecosystem.config.js"]

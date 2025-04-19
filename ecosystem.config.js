@@ -11,7 +11,7 @@ module.exports = {
     // exec_mode : "cluster"
   }, {
     name   : "scheduler",
-    script : "./dist/lib/scheduler.js", // Path to the compiled scheduler script
+    script : "./dist/src/lib/scheduler.js", // Corrected path based on tsconfig outDir/rootDir
     watch  : false, // No need to watch usually, restart handled by deployment
     env_production: {
        NODE_ENV: "production"
