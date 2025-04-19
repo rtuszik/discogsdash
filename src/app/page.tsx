@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // Link import removed correctly
 import TimeSeriesChart from '@/components/TimeSeriesChart';
-import SettingsModal from '@/components/SettingsModal';
+// SettingsModal import removed
 import DistributionPieChart from '@/components/DistributionPieChart';
 import ValuableItemsList from '@/components/ValuableItemsList'; // Import the new component
 
@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const [syncProgress, setSyncProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [syncFetchError, setSyncFetchError] = useState<string | null>(null); // Separate error state for status fetch
   const [finalSyncMessage, setFinalSyncMessage] = useState<string | null>(null); // Store final success/error message
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false); // State for modal
+  // isSettingsOpen state removed
 
   // Function to fetch dashboard stats
   const fetchStats = useCallback(async () => {
@@ -201,12 +201,7 @@ export default function DashboardPage() {
           >
             {isSyncing ? 'Syncing...' : 'Sync Collection'}
           </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="bg-neutral-700 hover:bg-neutral-600 text-neutral-100 font-semibold py-2 px-4 rounded transition duration-150 ease-in-out" // Updated colors
-          >
-            Settings
-          </button>
+          {/* Settings button removed */}
         </div>
       </header>
 
@@ -351,14 +346,7 @@ export default function DashboardPage() {
          </div>
       )}
 
-     {/* Settings Modal */}
-     <SettingsModal
-       isOpen={isSettingsOpen}
-       onClose={() => setIsSettingsOpen(false)}
-       // We could potentially fetch initial values from DB here if needed
-       // initialUsername={...}
-       // initialToken={...}
-     />
+     {/* Settings Modal removed */}
     </main>
   );
 }
