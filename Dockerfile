@@ -17,9 +17,9 @@ COPY . .
 # Set environment variable for Next.js build
 ENV NODE_ENV=production
 
-# Run the build command in separate steps
-RUN npm run build:scripts # Compile TS scripts first to ./dist
-RUN next build # Then run the Next.js build
+# Run the Next.js build command
+RUN npx next build # Run the Next.js build first
+# Removed script compilation from builder stage
 
 # Stage 3: Production image
 FROM node:20-alpine AS runner
@@ -36,11 +36,24 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
-RUN mkdir -p ./dist # Explicitly create dist directory before copying into it
-COPY --from=builder /app/dist ./dist # Copy the whole dist directory
+# Removed COPY for dist-scripts, will build in this stage
 
 # Create the database directory (should ideally be a volume mount)
 RUN mkdir -p .db && chown node:node .db
+
+# --- Build Scheduler Scripts within this stage ---
+# Temporarily install dev dependencies needed for tsc
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev # Install production deps first
+RUN npm install --include=dev typescript @types/node @types/better-sqlite3 @types/node-cron # Install only needed dev deps
+# Copy source files needed for compilation
+COPY tsconfig*.json ./
+COPY src ./src
+# Compile scripts using the dedicated config
+RUN npm run build:scripts
+# Remove dev dependencies and source files after build
+RUN npm prune --omit=dev && \
+    rm -rf src tsconfig.json tsconfig.scripts.json
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing

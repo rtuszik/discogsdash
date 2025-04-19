@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:scripts": "tsc",
+    "build:scripts": "tsc -p tsconfig.scripts.json",
     "build": "npm run build:scripts && next build",
     "start": "next start",
     "lint": "next lint"

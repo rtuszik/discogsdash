@@ -1,0 +1,21 @@
+{
+  // Inherit from the main tsconfig.json
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Override options specifically for script compilation
+    "module": "CommonJS", // Use CommonJS for standalone Node scripts
+    "moduleResolution": "Node", // Override resolution to be compatible with CommonJS
+    "outDir": "./dist-scripts", // Use a distinct output directory
+    // "rootDir": ".", // Removed rootDir, let tsc infer
+    "skipLibCheck": true, // Can often speed up script-only builds
+    "noEmit": false, // Ensure JS files are emitted
+    "isolatedModules": false // Not strictly needed for script compilation
+    // Remove Next.js specific plugin if it causes issues (optional)
+    // "plugins": []
+  },
+  // Include only the entry point script, tsc will resolve dependencies
+  "include": [
+    "src/lib/scheduler.ts"
+  ]
+  // Removed exclude array
+}
