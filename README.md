@@ -1,26 +1,32 @@
+## Note
+
+This project was the result of experimenting with Gemini 2.5 pro and autonomous coding agents. It was almost entirely written by an LLM.
+
+I do not plan on actively maintaining this project.
+
 # DiscogsDash - Your Personal Discogs Dashboard
 
 DiscogsDash provides a personalized dashboard to visualize and analyze your Discogs music collection. Gain insights into your collection's value, distribution, and trends over time.
 
 ## Features
 
-*   **Collection Overview:** See key statistics about your collection size and estimated value.
-*   **Value Trends:** Track the estimated market value of your collection over time.
-*   **Genre/Style Distribution:** Visualize the breakdown of your collection by genre and style.
-*   **Most Valuable Items:** Quickly identify the most valuable records in your collection based on Discogs market data.
-*   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs periodically).
-*   **Self-Hosted:** Run DiscogsDash on your own server using Docker.
+-   **Collection Overview:** See key statistics about your collection size and estimated value.
+-   **Value Trends:** Track the estimated market value of your collection over time.
+-   **Genre/Style Distribution:** Visualize the breakdown of your collection by genre and style.
+-   **Most Valuable Items:** Quickly identify the most valuable records in your collection based on Discogs market data.
+-   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs periodically).
+-   **Self-Hosted:** Run DiscogsDash on your own server using Docker.
 
 ## Tech Stack
 
-*   [Next.js](https://nextjs.org/) (React Framework)
-*   [TypeScript](https://www.typescriptlang.org/)
-*   [Tailwind CSS](https://tailwindcss.com/)
-*   [Recharts](https://recharts.org/) (Charting Library)
-*   [SQLite](https://www.sqlite.org/index.html) (Database)
-*   [Node-Cron](https://github.com/node-cron/node-cron) (Scheduler)
-*   [PM2](https://pm2.keymetrics.io/) (Process Manager within Docker)
-*   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
+-   [Next.js](https://nextjs.org/) (React Framework)
+-   [TypeScript](https://www.typescriptlang.org/)
+-   [Tailwind CSS](https://tailwindcss.com/)
+-   [Recharts](https://recharts.org/) (Charting Library)
+-   [SQLite](https://www.sqlite.org/index.html) (Database)
+-   [Node-Cron](https://github.com/node-cron/node-cron) (Scheduler)
+-   [PM2](https://pm2.keymetrics.io/) (Process Manager within Docker)
+-   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
 
 ## Configuration
 
@@ -58,8 +64,8 @@ DiscogsDash requires a **Discogs Personal Access Token** to access your collecti
 ## Self-Hosting (Docker Compose)
 
 1.  **Prerequisites:**
-    *   [Docker](https://docs.docker.com/get-docker/) installed.
-    *   [Docker Compose](https://docs.docker.com/compose/install/) installed.
+    -   [Docker](https://docs.docker.com/get-docker/) installed.
+    -   [Docker Compose](https://docs.docker.com/compose/install/) installed.
 2.  **Clone the repository:**
     ```bash
     git clone https://github.com/rtuszik/discogsdash.git
@@ -69,19 +75,19 @@ DiscogsDash requires a **Discogs Personal Access Token** to access your collecti
     Open the `docker-compose.yml` file and replace the placeholder values in the `environment` section with your actual Discogs token and username:
     ```yaml
     services:
-      discogsdash:
-        # ... other settings
-        environment:
-          - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # <-- Replace this
-          - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # <-- Replace this
-        # ... other settings
+        discogsdash:
+            # ... other settings
+            environment:
+                - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # <-- Replace this
+                - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # <-- Replace this
+            # ... other settings
     ```
 4.  **Start the application:**
     ```bash
     docker-compose up -d
     ```
     This command will build the Docker image (if not already built) and start the DiscogsDash container in the background.
-6.  Access the application at `http://<your-server-ip>:3000`.
+5.  Access the application at `http://<your-server-ip>:3000`.
 
 **Data Persistence:** Your collection data (SQLite database) is stored in a Docker volume named `discogsdash-data`. This ensures your data persists even if you stop and remove the container.
 
@@ -91,4 +97,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-*Disclaimer: This project uses the Discogs API but is not affiliated with, sponsored, or endorsed by Discogs.*
+_Disclaimer: This project uses the Discogs API but is not affiliated with, sponsored, or endorsed by Discogs._
