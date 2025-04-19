@@ -43,7 +43,7 @@ export default function DistributionPieChart({
 
     const sortedEntries = Object.entries(data).sort(([, countA], [, countB]) => countB - countA);
 
-    let chartData: PieChartDataPoint[] = sortedEntries.slice(0, limit).map(([name, value]) => ({ name, value }));
+    const chartData: PieChartDataPoint[] = sortedEntries.slice(0, limit).map(([name, value]) => ({ name, value })); // Changed let to const
 
     // Group remaining items into 'Other'
     if (sortedEntries.length > limit) {

@@ -10,12 +10,12 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceArea,
+  // ReferenceArea, // Removed unused import
 } from 'recharts';
 
 interface TimeSeriesDataPoint {
   timestamp: string; // ISO string date
-  [key: string]: any; // Allow other numeric values
+  [key: string]: number | string | null; // Replaced 'any' with more specific types
 }
 
 interface LineConfig {
@@ -39,7 +39,7 @@ const formatDateTick = (isoString: string): string => {
     const date = new Date(isoString);
     // Simple date format (e.g., 'Apr 17'), adjust as needed
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  } catch (e) {
+  } catch (_e) { // Prefix unused variable
     return isoString; // Fallback
   }
 };

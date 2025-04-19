@@ -3,7 +3,7 @@ const DISCOGS_API_BASE_URL = 'https://api.discogs.com';
 interface DiscogsRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; // Add other methods if needed
   headers?: Record<string, string>;
-  body?: any; // For POST/PUT requests
+  body?: unknown; // Replaced 'any' with 'unknown' for better type safety
 }
 
 /**
@@ -45,7 +45,7 @@ export async function makeDiscogsRequest<T>(
       try {
         const errorJson = await response.json();
         errorDetails = errorJson.message || JSON.stringify(errorJson);
-      } catch (e) {
+      } catch (_e) { // Prefix unused variable
         // Ignore if response is not JSON or empty
       }
       throw new Error(`Discogs API request failed: ${errorDetails}`);
@@ -96,7 +96,7 @@ export async function fetchPriceSuggestions(
     // Use the generic request function with the specific type
     const suggestions = await makeDiscogsRequest<PriceSuggestionsResponse>(endpoint, token);
     return suggestions;
-  } catch (error: any) {
+  } catch (error: unknown) { // Replaced 'any' with 'unknown'
     // Discogs API might return 404 if no suggestions exist, which makeDiscogsRequest throws an error for.
     // We want to treat 404 specifically as "no suggestions found" (null) rather than a hard error.
     // We need to check if the error message indicates a 404 status.

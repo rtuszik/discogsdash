@@ -36,7 +36,7 @@ interface DashboardStats {
   leastValuableItems: ValuableItem[];
 }
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) { // Prefix unused 'request' with underscore
   console.log('Received request for dashboard stats...');
 
   try {

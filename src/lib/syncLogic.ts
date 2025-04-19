@@ -1,4 +1,4 @@
-import { getSetting, getDb, setSetting } from '@/lib/db'; // Import setSetting
+import { getDb, setSetting } from '@/lib/db'; // Removed unused getSetting import
 import { makeDiscogsRequest, fetchPriceSuggestions } from '@/lib/discogs/client';
 
 // Re-define necessary types here or import from a shared types file if created

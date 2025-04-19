@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { runCollectionSync } from '@/lib/syncLogic'; // Import the refactored function
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) { // Prefix unused 'request' with underscore
   console.log('Received API request to sync collection...');
 
   try {

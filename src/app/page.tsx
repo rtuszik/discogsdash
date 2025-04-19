@@ -63,12 +63,12 @@ export default function DashboardPage() {
           const errorText = await response.text();
           // Try parsing as JSON *after* reading as text, in case it *was* a JSON error response
           try {
-             const errorJson = JSON.parse(errorText);
-             errorDetails = errorJson.message || errorText; // Use JSON message if available
-          } catch (jsonError) {
-             // If JSON parsing fails, use the raw text (likely HTML)
-             errorDetails = errorText.substring(0, 500); // Limit length to avoid huge logs/errors
-          }
+           const errorJson = JSON.parse(errorText);
+           errorDetails = errorJson.message || errorText; // Use JSON message if available
+        } catch (_jsonError) { // Prefix unused variable
+           // If JSON parsing fails, use the raw text (likely HTML)
+           errorDetails = errorText.substring(0, 500); // Limit length to avoid huge logs/errors
+        }
         } catch (textError) {
           // Fallback if reading text fails
           console.error("Could not read error response body:", textError);
@@ -109,11 +109,11 @@ export default function DashboardPage() {
           // Try to parse error from sync initiation
           let initialError = `Sync initiation failed: ${response.status}`;
           try {
-              const result = await response.json();
-              initialError = result.message || initialError;
-          } catch (_) { /* Ignore parsing error */ }
-          throw new Error(initialError);
-      }
+            const result = await response.json();
+            initialError = result.message || initialError;
+        } catch (__ /* _ */) { /* Ignore parsing error, prefix unused variable */ }
+        throw new Error(initialError);
+    }
       // Don't set final message here, polling will handle it
       console.log("Sync initiated via API call.");
 

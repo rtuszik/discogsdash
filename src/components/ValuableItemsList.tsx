@@ -50,7 +50,7 @@ export default function ValuableItemsList({ title, items, currencyFormatter }: V
                 fill // Use fill layout
                 style={{ objectFit: 'cover' }} // Ensure image covers the area
                 unoptimized={!item.cover_image_url} // Avoid optimizing placeholder
-                onError={(e) => {
+                onError={(_e) => { // Prefix unused variable
                   // Optional: Handle image loading errors, e.g., set to placeholder
                   // (Next.js Image might handle some cases automatically)
                   // console.warn(`Failed to load image: ${item.cover_image_url}`);

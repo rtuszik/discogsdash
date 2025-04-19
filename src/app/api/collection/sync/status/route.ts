@@ -8,7 +8,7 @@ export interface SyncStatusResponse {
   lastError: string | null;
 }
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) { // Prefix unused 'request' with underscore
   try {
     const status = getSetting('sync_status') || 'unknown';
     const currentItemStr = getSetting('sync_current_item') || '0';
