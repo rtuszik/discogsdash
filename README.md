@@ -17,6 +17,68 @@ DiscogsDash provides a personalized dashboard to visualize and analyze your Disc
 -   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs periodically).
 -   **Self-Hosted:** Run DiscogsDash on your own server using Docker.
 
+## Quick Start (Docker Compose)
+
+This is the recommended way to run DiscogsDash.
+
+**Prerequisites:**
+
+*   [Docker](https://docs.docker.com/get-docker/) installed.
+*   [Docker Compose](https://docs.docker.com/compose/install/) installed.
+*   A Discogs account.
+
+**Steps:**
+
+1.  **Create `docker-compose.yml`:**
+    Create a file named `docker-compose.yml` on your system where you want to run the application.
+
+2.  **Copy Content:**
+    Copy the following content into your `docker-compose.yml` file:
+
+    ```yaml
+    version: '3.8'
+
+    services:
+      discogsdash:
+        image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
+        container_name: discogsdash
+        ports:
+          - "3000:3000"
+        volumes:
+          - discogsdash-data:/app/.db
+        environment:
+          - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
+          - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+        restart: unless-stopped
+
+    volumes:
+      discogsdash-data:
+    ```
+
+3.  **Get Discogs Token & Username:**
+    *   You need a **Discogs Personal Access Token**. Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers) and generate a new token. Copy it securely.
+    *   You also need your **Discogs Username**.
+
+4.  **Configure:**
+    Open the `docker-compose.yml` file you created and replace the placeholder values:
+    *   Replace `YOUR_DISCOGS_TOKEN_HERE` with your actual Discogs Personal Access Token.
+    *   Replace `YOUR_DISCOGS_USERNAME_HERE` with your Discogs username.
+    *   **Important:** Keep your token secure!
+
+5.  **Run:**
+    Navigate to the directory containing your `docker-compose.yml` file in your terminal and run:
+    ```bash
+    docker-compose up -d
+    ```
+    This command will pull the latest `discogsdash` image from the GitHub Container Registry and start the application container in the background.
+
+6.  **Access:**
+    Open your web browser and navigate to `http://localhost:3000`. If you are running Docker on a remote server, replace `localhost` with your server's IP address or domain name.
+
+**Data Persistence:**
+
+Your collection data (SQLite database) is stored in a Docker volume named `discogsdash-data`. This ensures your data persists even if you stop, remove, or update the container.
+
 ## Tech Stack
 
 -   [Next.js](https://nextjs.org/) (React Framework)
@@ -28,72 +90,9 @@ DiscogsDash provides a personalized dashboard to visualize and analyze your Disc
 -   [PM2](https://pm2.keymetrics.io/) (Process Manager within Docker)
 -   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
 
-## Configuration
-
-DiscogsDash requires a **Discogs Personal Access Token** to access your collection data via the Discogs API.
-
-1.  Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers).
-2.  Generate a new Personal Access Token.
-3.  Copy this token. You will need it for both development and self-hosting setups.
-
-**Important:** Keep your token secure and do not commit it directly into your repository.
-
-## Development Setup
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/rtuszik/discogsdash.git
-    cd discogsdash
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Create a local environment file:**
-    Create a file named `.env.local` in the project root.
-4.  **Add your Discogs token to `.env.local`:**
-    ```env
-    DISCOGS_TOKEN=your_discogs_personal_access_token_here
-    ```
-5.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-6.  Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Self-Hosting (Docker Compose)
-
-1.  **Prerequisites:**
-    -   [Docker](https://docs.docker.com/get-docker/) installed.
-    -   [Docker Compose](https://docs.docker.com/compose/install/) installed.
-2.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/rtuszik/discogsdash.git
-    cd discogsdash
-    ```
-3.  **Configure `docker-compose.yml`:**
-    Open the `docker-compose.yml` file and replace the placeholder values in the `environment` section with your actual Discogs token and username:
-    ```yaml
-    services:
-        discogsdash:
-            # ... other settings
-            environment:
-                - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # <-- Replace this
-                - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # <-- Replace this
-            # ... other settings
-    ```
-4.  **Start the application:**
-    ```bash
-    docker-compose up -d
-    ```
-    This command will build the Docker image (if not already built) and start the DiscogsDash container in the background.
-5.  Access the application at `http://<your-server-ip>:3000`.
-
-**Data Persistence:** Your collection data (SQLite database) is stored in a Docker volume named `discogsdash-data`. This ensures your data persists even if you stop and remove the container.
-
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (You may need to create this file if one doesn't exist).
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 

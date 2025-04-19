@@ -36,6 +36,7 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
+# Removed explicit copy of next.config.ts, relying on standalone output copy
 # Removed COPY for dist-scripts, will build in this stage
 
 # Create the database directory (should ideally be a volume mount)
