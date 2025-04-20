@@ -101,30 +101,34 @@ jobs:
         # by pushing only tags that reference the platform-specific images
         env:
           # Store metadata outputs in env vars for easier access in script
+          # Note: steps.meta.outputs.images should contain the base image name
           IMAGE_NAME: ${{ steps.meta.outputs.images }}
+          # Note: steps.meta.outputs.tags contains newline-separated full tag references
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          echo "Image base name: ${IMAGE_NAME}"
-          echo "Creating manifests for tags: ${TAGS}"
+          # IMAGE_NAME should be like ghcr.io/rtuszik/discogsdash
+          # TAGS should be like ghcr.io/rtuszik/discogsdash:latest\nghcr.io/rtuszik/discogsdash:sha-xxxx
+          echo "Base Image Name: ${IMAGE_NAME}"
+          echo "Full Tags:"
+          echo "${TAGS}"
+          echo "---"
 
-          # Replace comma with space for safer loop iteration over tags
-          TAGS_FOR_LOOP=$(echo "${TAGS}" | sed 's/,/ /g')
-
-          for full_tag_ref in $TAGS_FOR_LOOP; do
-            # Extract only the tag name (e.g., latest, sha-xxxx) from the full reference (e.g., ghcr.io/user/repo:latest)
+          # Loop directly over the newline-separated tags
+          echo "${TAGS}" | while IFS= read -r full_tag_ref; do
+            # Extract only the tag name (e.g., latest, sha-xxxx)
             manifest_tag_name="${full_tag_ref##*:}"
 
             echo "Processing manifest for tag: ${manifest_tag_name}"
             echo "  amd64 image: ${IMAGE_NAME}:${manifest_tag_name}-amd64"
             echo "  arm64 image: ${IMAGE_NAME}:${manifest_tag_name}-arm64"
 
-            # Create the manifest for the specific tag (e.g., ghcr.io/user/repo:latest)
-            docker manifest create "${IMAGE_NAME}:${manifest_tag_name}" \
+            # Create the manifest using the full tag reference (e.g., ghcr.io/user/repo:latest)
+            docker manifest create "${full_tag_ref}" \
               --amend "${IMAGE_NAME}:${manifest_tag_name}-amd64" \
               --amend "${IMAGE_NAME}:${manifest_tag_name}-arm64"
 
-            # Push the manifest for the specific tag
-            docker manifest push "${IMAGE_NAME}:${manifest_tag_name}"
-            echo "Pushed manifest for ${IMAGE_NAME}:${manifest_tag_name}"
+            # Push the manifest using the full tag reference
+            docker manifest push "${full_tag_ref}"
+            echo "Pushed manifest for ${full_tag_ref}"
             echo "---"
           done
