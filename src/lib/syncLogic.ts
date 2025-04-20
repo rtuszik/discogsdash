@@ -190,18 +190,34 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
           const suggestions = await fetchPriceSuggestions(release.id, token);
           lastCheckTimestamp = new Date().toISOString();
 
+          // Define preferred condition order for fallback
+          const conditionOrder = [
+              'Mint (M)',
+              'Near Mint (NM or M-)',
+              'Very Good Plus (VG+)',
+              'Very Good (VG)',
+              'Good Plus (G+)',
+              'Good (G)',
+              'Fair (F)',
+              'Poor (P)'
+          ];
+
           if (suggestions) {
-              const mintCondition = "Mint (M)";
-              if (suggestions[mintCondition]) {
-                  itemSuggestedValue = suggestions[mintCondition].value;
-                  console.log(` -> Found Mint value: ${itemSuggestedValue}`);
-              } else {
-                  console.log(` -> Mint condition not found in suggestions.`);
+              console.log(` -> Received suggestions:`, Object.keys(suggestions));
+              for (const condition of conditionOrder) {
+                  if (suggestions[condition]) {
+                      itemSuggestedValue = suggestions[condition].value;
+                      console.log(` -> Using value for condition "${condition}": ${itemSuggestedValue}`);
+                      break; // Found the best available value
+                  }
               }
+              if (itemSuggestedValue === null) {
+                  console.log(` -> No value found for preferred conditions.`);
+              }
+          } else {
+              console.log(` -> No suggestions object received.`);
           }
-           // Add delay to respect Discogs rate limit (60/min -> >1000ms per request)
-           console.log(` -> Waiting 1100ms before next price fetch...`);
-           await new Promise(resolve => setTimeout(resolve, 1100));
+          // Manual delay removed - handled by retry logic in makeDiscogsRequest
 
       } catch (priceError) {
           console.error(`Failed to fetch price suggestions for release ID ${release.id}:`, priceError);
