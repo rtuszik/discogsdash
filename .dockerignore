@@ -1,0 +1,26 @@
+# Git files
+.git
+.gitignore
+
+# Node modules (installed within Dockerfile)
+node_modules
+
+# Environment files
+.env*
+!.env.example
+
+# Documentation & Planning
+*.md
+LICENSE
+
+# Build outputs (handled within Dockerfile stages)
+.next
+dist
+dist-scripts
+
+# OS specific files
+.DS_Store
+*.pem
+
+# Editor/IDE config
+.vscode

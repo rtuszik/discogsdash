@@ -1,51 +1,111 @@
 name: Publish Docker Image to GHCR
 
 on:
-    push:
-        branches: [main] # Trigger on pushes to the main branch
-    workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-    build-and-push:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write # Needed to push to GHCR
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Needed to push platform-specific images
+    strategy:
+      matrix:
+        # Define the platforms to build for
+        platform: [linux/amd64, linux/arm64]
+        # Optional: Define friendly names for outputs/artifacts if needed
+        # arch: [amd64, arm64]
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
+      - name: Set up QEMU
+        # Only needed if runner arch doesn't match build arch (e.g., building arm64 on amd64 runner)
+        if: matrix.platform != 'linux/amd64' # Assuming runner is amd64
+        uses: docker/setup-qemu-action@v3
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Log in to GitHub Container Registry
-              uses: docker/login-action@v3
-              with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }} # Use the default GITHUB_TOKEN
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Extract metadata (tags, labels) for Docker
-              id: meta
-              uses: docker/metadata-action@v5
-              with:
-                  images: ghcr.io/${{ github.repository }} # Use github.repository for username/repo
-                  tags: |
-                      type=sha # Tag with commit SHA
-                      type=raw,value=latest,enable={{is_default_branch}} # Tag with 'latest' on default branch (main)
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # Generate platform-specific tags for pushing intermediate images
+          # Example: latest-amd64, sha-xxxxxxx-amd64
+          tags: |
+            type=sha,suffix=-${{ strategy.matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+            type=raw,value=latest-${{ strategy.matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }},enable={{is_default_branch}}
 
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v6
-              with:
-                  context: .
-                  platforms: linux/amd64,linux/arm64 # Build for both architectures
-                  push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+      # Add NPM Caching
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
+      - name: Build and push platform-specific image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # Build only for the platform specified in the matrix
+          platforms: ${{ matrix.platform }}
+          push: true # Push the platform-specific image
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Use GHA cache for build layers
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  push-manifest:
+    # This job runs after all matrix jobs in 'build' are successful
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write # Needed to push the manifest
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for manifest
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # Define the final multi-arch tags
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Create and push multi-arch manifest
+        # This uses docker manifest command implicitly via build-push-action
+        # by pushing only tags that reference the platform-specific images
+        run: |
+          echo "Creating manifest for tags: ${{ steps.meta.outputs.tags }}"
+          # Construct the manifest push command for each tag
+          # Example tag: latest, sha-xxxxxxx
+          for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'); do
+            docker manifest create $tag \
+              --amend ${{ steps.meta.outputs.images }}:${tag#*:}-amd64 \
+              --amend ${{ steps.meta.outputs.images }}:${tag#*:}-arm64
+            docker manifest push $tag
+          done
