@@ -6,25 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-push: 
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Needed to push platform-specific images
-    strategy:
-      matrix:
-        # Define the platforms to build for
-        platform: [linux/amd64, linux/arm64]
-        # Optional: Define friendly names for outputs/artifacts if needed
-        # arch: [amd64, arm64]
+      packages: write # Needed to push to GHCR
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up QEMU
-        # Only needed if runner arch doesn't match build arch (e.g., building arm64 on amd64 runner)
-        if: matrix.platform != 'linux/amd64' # Assuming runner is amd64
+        # Needed for multi-platform builds
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -42,13 +35,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
-          # Generate platform-specific tags for pushing intermediate images
-          # Example: latest-amd64, sha-xxxxxxx-amd64
+          # Generate final multi-arch tags
           tags: |
-            type=sha,suffix=-${{ strategy.matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
-            type=raw,value=latest-${{ strategy.matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }},enable={{is_default_branch}}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      # Add NPM Caching
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v4
@@ -58,77 +49,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Build and push platform-specific image
+      - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Build only for the platform specified in the matrix
-          platforms: ${{ matrix.platform }}
-          push: true # Push the platform-specific image
+          # Build for both architectures directly
+          platforms: linux/amd64,linux/arm64
+          push: true # Push the multi-arch image
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Use GHA cache for build layers
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  push-manifest:
-    # This job runs after all matrix jobs in 'build' are successful
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write # Needed to push the manifest
-
-    steps:
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for manifest
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          # Define the final multi-arch tags
-          tags: |
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Create and push multi-arch manifest
-        # This uses docker manifest command implicitly via build-push-action
-        # by pushing only tags that reference the platform-specific images
-        env:
-          # Store metadata outputs in env vars for easier access in script
-          # Note: steps.meta.outputs.images should contain the base image name
-          IMAGE_NAME: ${{ steps.meta.outputs.images }}
-          # Note: steps.meta.outputs.tags contains newline-separated full tag references
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          # IMAGE_NAME should be like ghcr.io/rtuszik/discogsdash
-          # TAGS should be like ghcr.io/rtuszik/discogsdash:latest\nghcr.io/rtuszik/discogsdash:sha-xxxx
-          echo "Base Image Name: ${IMAGE_NAME}"
-          echo "Full Tags:"
-          echo "${TAGS}"
-          echo "---"
-
-          # Loop directly over the newline-separated tags
-          echo "${TAGS}" | while IFS= read -r full_tag_ref; do
-            # Extract only the tag name (e.g., latest, sha-xxxx)
-            manifest_tag_name="${full_tag_ref##*:}"
-
-            echo "Processing manifest for tag: ${manifest_tag_name}"
-            echo "  amd64 image: ${IMAGE_NAME}:${manifest_tag_name}-amd64"
-            echo "  arm64 image: ${IMAGE_NAME}:${manifest_tag_name}-arm64"
-
-            # Create the manifest using the full tag reference (e.g., ghcr.io/user/repo:latest)
-            docker manifest create "${full_tag_ref}" \
-              --amend "${IMAGE_NAME}:${manifest_tag_name}-amd64" \
-              --amend "${IMAGE_NAME}:${manifest_tag_name}-arm64"
-
-            # Push the manifest using the full tag reference
-            docker manifest push "${full_tag_ref}"
-            echo "Pushed manifest for ${full_tag_ref}"
-            echo "---"
-          done
