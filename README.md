@@ -8,6 +8,12 @@ I do not plan on actively maintaining this project.
 
 DiscogsDash provides a personalized dashboard to visualize and analyze your Discogs music collection. Gain insights into your collection's value, distribution, and trends over time.
 
+## Screenshots
+
+![](screenshots/DiscogsDash_Mockup_1.png)
+
+![](screenshots/DiscogsDash_Mockup_2.png)
+
 ## Features
 
 -   **Collection Overview:** See key statistics about your collection size and estimated value.
@@ -23,9 +29,9 @@ This is the recommended way to run DiscogsDash.
 
 **Prerequisites:**
 
-*   [Docker](https://docs.docker.com/get-docker/) installed.
-*   [Docker Compose](https://docs.docker.com/compose/install/) installed.
-*   A Discogs account.
+-   [Docker](https://docs.docker.com/get-docker/) installed.
+-   [Docker Compose](https://docs.docker.com/compose/install/) installed.
+-   A Discogs account.
 
 **Steps:**
 
@@ -36,40 +42,44 @@ This is the recommended way to run DiscogsDash.
     Copy the following content into your `docker-compose.yml` file:
 
     ```yaml
-    version: '3.8'
+    version: "3.8"
 
     services:
-      discogsdash:
-        image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
-        container_name: discogsdash
-        ports:
-          - "3000:3000"
-        volumes:
-          - discogsdash-data:/app/.db
-        environment:
-          - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
-          - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
-        restart: unless-stopped
+        discogsdash:
+            image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
+            container_name: discogsdash
+            ports:
+                - "3000:3000"
+            volumes:
+                - discogsdash-data:/app/.db
+            environment:
+                - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
+                - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+            restart: unless-stopped
 
     volumes:
-      discogsdash-data:
+        discogsdash-data:
     ```
 
 3.  **Get Discogs Token & Username:**
-    *   You need a **Discogs Personal Access Token**. Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers) and generate a new token. Copy it securely.
-    *   You also need your **Discogs Username**.
+
+    -   You need a **Discogs Personal Access Token**. Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers) and generate a new token. Copy it securely.
+    -   You also need your **Discogs Username**.
 
 4.  **Configure:**
     Open the `docker-compose.yml` file you created and replace the placeholder values:
-    *   Replace `YOUR_DISCOGS_TOKEN_HERE` with your actual Discogs Personal Access Token.
-    *   Replace `YOUR_DISCOGS_USERNAME_HERE` with your Discogs username.
-    *   **Important:** Keep your token secure!
+
+    -   Replace `YOUR_DISCOGS_TOKEN_HERE` with your actual Discogs Personal Access Token.
+    -   Replace `YOUR_DISCOGS_USERNAME_HERE` with your Discogs username.
+    -   **Important:** Keep your token secure!
 
 5.  **Run:**
     Navigate to the directory containing your `docker-compose.yml` file in your terminal and run:
+
     ```bash
     docker-compose up -d
     ```
+
     This command will pull the latest `discogsdash` image from the GitHub Container Registry and start the application container in the background.
 
 6.  **Access:**
