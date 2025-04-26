@@ -19,7 +19,7 @@ DiscogsDash provides a personalized dashboard to visualize and analyze your Disc
 -   **Value Trends:** Track the estimated market value of your collection over time.
 -   **Genre/Style Distribution:** Visualize the breakdown of your collection by genre and style.
 -   **Most Valuable Items:** Quickly identify the most valuable records in your collection based on Discogs market data.
--   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs periodically).
+-   **Automatic Sync:** Keeps your dashboard updated with your latest Discogs collection changes (runs daily at 2am).
 -   **Self-Hosted:** Run DiscogsDash on your own server using Docker.
 
 ## Quick Start (Docker Compose)
