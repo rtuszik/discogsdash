@@ -65,7 +65,7 @@ This is the recommended way to run DiscogsDash.
     -   You need a **Discogs Personal Access Token**. Go to your Discogs [Developer Settings](https://www.discogs.com/settings/developers) and generate a new token. Copy it securely.
     -   You also need your **Discogs Username**.
 
-    **- In order to retrieve the suggested pricing for individual collection items, you need to fill out your [Discogs Seller Settings](https://www.discogs.com/settings/seller/)**
+    **In order to retrieve the suggested pricing for individual collection items, you need to fill out your [Discogs Seller Settings](https://www.discogs.com/settings/seller/)**
 
 4.  **Configure:**
     Open the `docker-compose.yml` file you created and replace the placeholder values:
