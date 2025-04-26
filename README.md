@@ -9,11 +9,9 @@ As a result of that, I do not plan on actively maintaining this project, though 
 
 DiscogsDash provides a personalized dashboard to visualize and analyze your Discogs music collection. Gain insights into your collection's value, distribution, and trends over time.
 
-## Screenshots
+## First Look
 
-![](screenshots/DiscogsDash_Mockup_1.png)
-
-![](screenshots/DiscogsDash_Mockup_2.png)
+![](screenshots/DiscogsDash_Mockup.png)
 
 ## Features
 
