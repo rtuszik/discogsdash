@@ -1,8 +1,9 @@
-## Note
+### Note
 
-This project was the result of experimenting with Gemini 2.5 pro and autonomous coding agents. It was almost entirely written by an LLM.
+This project was the result of experimenting with Gemini 2.5 pro and autonomous agentic coding (Roocode).
+The entire codebase was written by an LLM apart from some interventions where the LLM got stuck.
 
-I do not plan on actively maintaining this project.
+As a result of that, I do not plan on actively maintaining this project, though issues on bug reports are welcome.
 
 # DiscogsDash - Your Personal Discogs Dashboard
 
@@ -73,7 +74,6 @@ This is the recommended way to run DiscogsDash.
 
     -   Replace `YOUR_DISCOGS_TOKEN_HERE` with your actual Discogs Personal Access Token.
     -   Replace `YOUR_DISCOGS_USERNAME_HERE` with your Discogs username.
-    -   **Important:** Keep your token secure!
 
 5.  **Run:**
     Navigate to the directory containing your `docker-compose.yml` file in your terminal and run:
@@ -99,7 +99,7 @@ Your collection data (SQLite database) is stored in a Docker volume named `disco
 -   [Recharts](https://recharts.org/) (Charting Library)
 -   [SQLite](https://www.sqlite.org/index.html) (Database)
 -   [Node-Cron](https://github.com/node-cron/node-cron) (Scheduler)
--   [PM2](https://pm2.keymetrics.io/) (Process Manager within Docker)
+-   [PM2](https://github.com/Unitech/pm2) (Process Manager within Docker)
 -   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
 
 ## License
