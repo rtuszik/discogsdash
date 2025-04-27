@@ -3,28 +3,42 @@ import { runCollectionSync } from './syncLogic'; // Adjust path if necessary
 
 console.log('Scheduler module loaded. Setting up cron job...');
 
-// Schedule the sync task to run every day at 2:00 AM
-// Cron format: second minute hour day-of-month month day-of-week
-// '0 2 * * *' means: 0th second, 2nd minute, every hour, every day of month, every month, every day of week
-const cronSchedule = '0 2 * * *';
+// Define the default cron schedule (daily at midnight)
+const DEFAULT_CRON_SCHEDULE = '0 0 * * *';
+// Read schedule from environment variable or use default
+const effectiveCronSchedule = process.env.SYNC_CRON_SCHEDULE || DEFAULT_CRON_SCHEDULE;
 
-console.log(`Scheduling collection sync with pattern: "${cronSchedule}"`);
+if (process.env.SYNC_CRON_SCHEDULE) {
+  console.log(`Using custom cron schedule from SYNC_CRON_SCHEDULE: "${effectiveCronSchedule}"`);
+} else {
+  console.log(`Using default cron schedule: "${effectiveCronSchedule}". Set SYNC_CRON_SCHEDULE to override.`);
+}
 
-cron.schedule(cronSchedule, async () => {
-  console.log(`[${new Date().toISOString()}] Running scheduled collection sync...`);
-  try {
-    const result = await runCollectionSync();
-    console.log(`[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`);
+// Validate the cron schedule format (basic validation)
+if (!cron.validate(effectiveCronSchedule)) {
+  console.error(`[ERROR] Invalid cron schedule format provided: "${effectiveCronSchedule}". Scheduler will not run.`);
+  // Optionally, exit or prevent scheduling if invalid
+  // process.exit(1); // Uncomment to exit if the schedule is invalid
+} else {
+  console.log(`Scheduling collection sync with pattern: "${effectiveCronSchedule}"`);
+
+  cron.schedule(effectiveCronSchedule, async () => {
+    const startTime = new Date();
+    console.log(`[${startTime.toISOString()}] Cron job triggered. Starting collection sync...`);
+    try {
+      const result = await runCollectionSync();
+      console.log(`[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`);
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Scheduled sync failed:`, error);
     // Consider adding more robust error reporting here (e.g., logging service, email)
-  }
-}, {
-  scheduled: true,
-  timezone: "Europe/Berlin" // Optional: Specify timezone, otherwise uses server timezone
-});
+  } // End of try-catch block
+  }, { // End of async callback function
+    scheduled: true,
+    timezone: "Europe/Berlin" // Optional: Specify timezone, otherwise uses server timezone
+  }); // End of cron.schedule call
 
-console.log('Cron job scheduled successfully.');
+  console.log('Cron job scheduled successfully.');
+} // End of else block (for cron.validate)
 
 // Keep the script running (important if run as a separate process)
 // In a simple setup, this might not be needed if run alongside the main app process,

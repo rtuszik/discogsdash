@@ -1,18 +1,20 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  discogsdash:
-    image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
-    container_name: discogsdash
-    ports:
-      - "3000:3000"
-    volumes:
-      - discogsdash-data:/app/.db
-    environment:
-      - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
-      - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
-      # - NODE_ENV=production # Already set in Dockerfile, but can be explicit here if needed
-    restart: unless-stopped
+    discogsdash:
+        image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
+        container_name: discogsdash
+        ports:
+            - "3000:3000"
+        volumes:
+            - discogsdash-data:/app/.db
+        environment:
+            - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
+            - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+            - SYNC_CRON_SCHEDULE=*/5 * * * *
+            # - NODE_ENV=production # Already set in Dockerfile, but can be explicit here if needed
+        restart: unless-stopped
 
 volumes:
-  discogsdash-data:
+    discogsdash-data:
+
