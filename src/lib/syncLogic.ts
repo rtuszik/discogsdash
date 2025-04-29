@@ -1,5 +1,5 @@
-import { getDb, setSetting } from '@/lib/db'; // Removed unused getSetting import
-import { makeDiscogsRequest, fetchPriceSuggestions } from '@/lib/discogs/client';
+import { getDb, setSetting } from './db'; // Use relative path
+import { makeDiscogsRequest, fetchPriceSuggestions } from './discogs/client'; // Use relative path
 
 // Re-define necessary types here or import from a shared types file if created
 interface DiscogsPagination {

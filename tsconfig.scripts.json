@@ -13,9 +13,12 @@
     // Remove Next.js specific plugin if it causes issues (optional)
     // "plugins": []
   },
-  // Include only the entry point script, tsc will resolve dependencies
+  // Include all necessary scripts for the scheduler process
   "include": [
-    "src/lib/scheduler.ts"
+    "src/lib/scheduler.ts",
+    "src/lib/syncLogic.ts",
+    "src/lib/db/index.ts",
+    "src/lib/discogs/client.ts"
   ]
   // Removed exclude array
 }

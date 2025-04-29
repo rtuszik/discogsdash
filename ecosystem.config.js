@@ -11,7 +11,8 @@ module.exports = {
     // exec_mode : "cluster"
   }, {
     name   : "scheduler",
-    script : "./dist-scripts/src/lib/scheduler.js", // Updated path for new outDir
+    script : "/app/dist-scripts/src/lib/scheduler.js", // Correct absolute path based on tsc output structure
+    interpreter: "node", // Explicitly tell PM2 to use node
     watch  : false, // No need to watch usually, restart handled by deployment
     env_production: {
        NODE_ENV: "production"
