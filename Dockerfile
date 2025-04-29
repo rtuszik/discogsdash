@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+FROM node:23-alpine AS deps
 WORKDIR /app
 
 # Copy package.json and package-lock.json (or yarn.lock)
@@ -9,7 +9,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --frozen-lockfile
 
 # Stage 2: Build the application
-FROM node:20-alpine AS builder
+FROM node:23-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -22,7 +22,7 @@ RUN npx next build # Run the Next.js build first
 # Removed script compilation from builder stage
 
 # Stage 3: Production image
-FROM node:20-alpine AS runner
+FROM node:23-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
