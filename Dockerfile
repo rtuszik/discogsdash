@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-RUN npm install --frozen-lockfile
+RUN npm ci
 
 FROM node:24-alpine AS builder
 WORKDIR /app
