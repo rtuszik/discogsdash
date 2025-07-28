@@ -1,53 +1,62 @@
-import cron from 'node-cron';
-import { runCollectionSync } from './syncLogic'; // Adjust path if necessary
+import cron from "node-cron";
+import { runCollectionSync } from "./syncLogic";
 
-console.log('Scheduler module loaded. Setting up cron job...');
+const DEFAULT_CRON_SCHEDULE = "0 0 * * *";
 
-// Define the default cron schedule (daily at midnight)
-const DEFAULT_CRON_SCHEDULE = '0 0 * * *';
-// Read schedule from environment variable or use default
-const effectiveCronSchedule = process.env.SYNC_CRON_SCHEDULE || DEFAULT_CRON_SCHEDULE;
+export function setupScheduler() {
+    console.log("Setting up cron job...");
 
-if (process.env.SYNC_CRON_SCHEDULE) {
-  console.log(`Using custom cron schedule from SYNC_CRON_SCHEDULE: "${effectiveCronSchedule}"`);
-} else {
-  console.log(`Using default cron schedule: "${effectiveCronSchedule}". Set SYNC_CRON_SCHEDULE to override.`);
+    const effectiveCronSchedule = process.env.SYNC_CRON_SCHEDULE || DEFAULT_CRON_SCHEDULE;
+
+    if (process.env.SYNC_CRON_SCHEDULE) {
+        console.log(
+            `Using custom cron schedule from SYNC_CRON_SCHEDULE: "${effectiveCronSchedule}"`,
+        );
+    } else {
+        console.log(
+            `Using default cron schedule: "${effectiveCronSchedule}". Set SYNC_CRON_SCHEDULE to override.`,
+        );
+    }
+
+    if (!cron.validate(effectiveCronSchedule)) {
+        console.error(
+            `[ERROR] Invalid cron schedule format provided: "${effectiveCronSchedule}". Scheduler will not run.`,
+        );
+
+        return;
+    }
+
+    console.log(`Scheduling collection sync with pattern: "${effectiveCronSchedule}"`);
+
+    cron.schedule(
+        effectiveCronSchedule,
+        async () => {
+            const startTime = new Date();
+            console.log(
+                `[${startTime.toISOString()}] Cron job triggered. Starting collection sync...`,
+            );
+            try {
+                const result = await runCollectionSync();
+                console.log(
+                    `[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`,
+                );
+            } catch (error) {
+                console.error(`[${new Date().toISOString()}] Scheduled sync failed:`, error);
+            }
+        },
+        {
+            scheduled: true,
+            timezone: "Europe/Berlin",
+        },
+    );
+
+    console.log("Cron job scheduled successfully.");
 }
 
-// Validate the cron schedule format (basic validation)
-if (!cron.validate(effectiveCronSchedule)) {
-  console.error(`[ERROR] Invalid cron schedule format provided: "${effectiveCronSchedule}". Scheduler will not run.`);
-  // Optionally, exit or prevent scheduling if invalid
-  // process.exit(1); // Uncomment to exit if the schedule is invalid
+if (require.main === module) {
+    console.log("Scheduler module loaded directly. Running setup...");
+    setupScheduler();
 } else {
-  console.log(`Scheduling collection sync with pattern: "${effectiveCronSchedule}"`);
+    console.log("Scheduler module loaded as a dependency.");
+}
 
-  cron.schedule(effectiveCronSchedule, async () => {
-    const startTime = new Date();
-    console.log(`[${startTime.toISOString()}] Cron job triggered. Starting collection sync...`);
-    try {
-      const result = await runCollectionSync();
-      console.log(`[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`);
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] Scheduled sync failed:`, error);
-    // Consider adding more robust error reporting here (e.g., logging service, email)
-  } // End of try-catch block
-  }, { // End of async callback function
-    scheduled: true,
-    timezone: "Europe/Berlin" // Optional: Specify timezone, otherwise uses server timezone
-  }); // End of cron.schedule call
-
-  console.log('Cron job scheduled successfully.');
-} // End of else block (for cron.validate)
-
-// Keep the script running (important if run as a separate process)
-// In a simple setup, this might not be needed if run alongside the main app process,
-// but it doesn't hurt for clarity if run standalone.
-// process.stdin.resume(); // Or use a more robust process manager like pm2
-
-// Optional: Add graceful shutdown handling if needed
-// process.on('SIGINT', () => {
-//   console.log('Scheduler shutting down...');
-//   // Perform any cleanup if necessary
-//   process.exit(0);
-// });

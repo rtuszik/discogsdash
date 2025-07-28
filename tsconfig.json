@@ -5,14 +5,14 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmit": false, // Allow JS output
+    "noEmit": false, 
     "esModuleInterop": true,
-    "module": "esnext", // Revert for Next.js compatibility
-    "moduleResolution": "bundler", // Revert for Next.js path aliases
+    "module": "esnext", 
+    "moduleResolution": "bundler", 
     "resolveJsonModule": true,
-    "baseUrl": ".", // Explicitly set baseUrl for paths
-    "outDir": "./dist", // Keep for script compilation (might need separate tsconfig later)
-    "rootDir": ".", // Set rootDir to project root
+    "baseUrl": ".", 
+    "outDir": "./dist", 
+    "rootDir": ".", 
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
@@ -25,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], // Revert include
-  "exclude": ["node_modules", "dist"] // Keep dist excluded
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], 
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/tests", "src/mocks"] 
 }
