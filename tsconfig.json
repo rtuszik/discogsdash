@@ -26,5 +26,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], 
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/tests", "src/mocks"] 
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/tests", "src/mocks", "migrate-sqlite-to-postgres.ts", "docker-migrate.sh"] 
 }
