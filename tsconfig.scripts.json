@@ -1,24 +1,24 @@
 {
-  // Inherit from the main tsconfig.json
+  
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    // Override options specifically for script compilation
-    "module": "CommonJS", // Use CommonJS for standalone Node scripts
-    "moduleResolution": "Node", // Override resolution to be compatible with CommonJS
-    "outDir": "./dist-scripts", // Use a distinct output directory
-    // "rootDir": ".", // Removed rootDir, let tsc infer
-    "skipLibCheck": true, // Can often speed up script-only builds
-    "noEmit": false, // Ensure JS files are emitted
-    "isolatedModules": false // Not strictly needed for script compilation
-    // Remove Next.js specific plugin if it causes issues (optional)
-    // "plugins": []
+    
+    "module": "CommonJS", 
+    "moduleResolution": "Node", 
+    "outDir": "./dist-scripts", 
+    
+    "skipLibCheck": true, 
+    "noEmit": false, 
+    "isolatedModules": false 
+    
+    
   },
-  // Include all necessary scripts for the scheduler process
+  
   "include": [
     "src/lib/scheduler.ts",
     "src/lib/syncLogic.ts",
     "src/lib/db/index.ts",
     "src/lib/discogs/client.ts"
   ]
-  // Removed exclude array
+  
 }

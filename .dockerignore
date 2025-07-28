@@ -24,3 +24,20 @@ dist-scripts
 
 # Editor/IDE config
 .vscode
+
+# Test files and configuration
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+vitest.config.ts
+jest.config.js # If Jest was considered
+tsconfig.test.json # If used
+
+# Mocks
+src/mocks/
+src/tests/ # Also ignore the setup file directory
+
+# Coverage reports
+coverage/

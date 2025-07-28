@@ -44,20 +44,40 @@ This is the recommended way to run DiscogsDash.
     version: "3.8"
 
     services:
+        postgres:
+            image: postgres:16-alpine
+            container_name: discogsdash-postgres
+            ports:
+                - "5432:5432"
+            volumes:
+                - postgres-data:/var/lib/postgresql/data
+            environment:
+                - POSTGRES_USER=discogsdash
+                - POSTGRES_PASSWORD=discogsdash_password # Change this in production!
+                - POSTGRES_DB=discogsdash
+            restart: unless-stopped
+            healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U discogsdash"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+
         discogsdash:
             image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
             container_name: discogsdash
             ports:
                 - "3000:3000"
-            volumes:
-                - discogsdash-data:/app/.db
             environment:
                 - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
                 - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+                - DATABASE_URL=postgresql://discogsdash:discogsdash_password@postgres:5432/discogsdash
+            depends_on:
+                postgres:
+                    condition: service_healthy
             restart: unless-stopped
 
     volumes:
-        discogsdash-data:
+        postgres-data:
     ```
 
 3.  **Get Discogs Token & Username:**
@@ -72,6 +92,7 @@ This is the recommended way to run DiscogsDash.
 
     -   Replace `YOUR_DISCOGS_TOKEN_HERE` with your actual Discogs Personal Access Token.
     -   Replace `YOUR_DISCOGS_USERNAME_HERE` with your Discogs username.
+    -   **Important**: Change the PostgreSQL password (`discogsdash_password`) in both the `postgres` service and the `DATABASE_URL` for production use.
 
 5.  **Run:**
     Navigate to the directory containing your `docker-compose.yml` file in your terminal and run:
@@ -87,7 +108,7 @@ This is the recommended way to run DiscogsDash.
 
 **Data Persistence:**
 
-Your collection data (SQLite database) is stored in a Docker volume named `discogsdash-data`. This ensures your data persists even if you stop, remove, or update the container.
+Your collection data is stored in PostgreSQL with a Docker volume named `postgres-data`. This ensures your data persists even if you stop, remove, or update the containers.
 
 ## Tech Stack
 
@@ -95,7 +116,7 @@ Your collection data (SQLite database) is stored in a Docker volume named `disco
 -   [TypeScript](https://www.typescriptlang.org/)
 -   [Tailwind CSS](https://tailwindcss.com/)
 -   [Recharts](https://recharts.org/) (Charting Library)
--   [SQLite](https://www.sqlite.org/index.html) (Database)
+-   [PostgreSQL](https://www.postgresql.org/) (Database)
 -   [Node-Cron](https://github.com/node-cron/node-cron) (Scheduler)
 -   [PM2](https://github.com/Unitech/pm2) (Process Manager within Docker)
 -   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)

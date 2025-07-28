@@ -1,20 +1,39 @@
 version: "3.8"
 
 services:
+    postgres:
+        image: postgres:16-alpine
+        container_name: discogsdash-postgres
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_USER=discogsdash
+            - POSTGRES_PASSWORD=discogsdash_password
+            - POSTGRES_DB=discogsdash
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U discogsdash"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
     discogsdash:
-        image: ghcr.io/rtuszik/discogsdash:latest # Use the pre-built image
+        image: ghcr.io/rtuszik/discogsdash:latest
         container_name: discogsdash
         ports:
             - "3000:3000"
-        volumes:
-            - discogsdash-data:/app/.db
         environment:
-            - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE # Replace with your actual token
-            - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE # Replace with your Discogs username
+            - DISCOGS_TOKEN=YOUR_DISCOGS_TOKEN_HERE
+            - DISCOGS_USERNAME=YOUR_DISCOGS_USERNAME_HERE
             - SYNC_CRON_SCHEDULE=*/5 * * * *
-            # - NODE_ENV=production # Already set in Dockerfile, but can be explicit here if needed
+            - DATABASE_URL=postgresql://discogsdash:discogsdash_password@postgres:5432/discogsdash
+
+        depends_on:
+            postgres:
+                condition: service_healthy
         restart: unless-stopped
 
 volumes:
-    discogsdash-data:
-
+    postgres-data:
