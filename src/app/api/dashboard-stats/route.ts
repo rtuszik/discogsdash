@@ -12,6 +12,19 @@ interface ValuableItem {
     suggested_value: number | null;
 }
 
+interface LatestAddition {
+    id: number;
+    release_id: number;
+    artist: string | null;
+    title: string | null;
+    cover_image_url: string | null;
+    condition: string | null;
+    suggested_value: number | null;
+    added_date: string;
+    format: string | null;
+    year: number | null;
+}
+
 interface DashboardStats {
     totalItems: number;
     latestValueMin: number | null;
@@ -33,6 +46,7 @@ interface DashboardStats {
 
     topValuableItems: ValuableItem[];
     leastValuableItems: ValuableItem[];
+    latestAdditions: LatestAddition[];
 }
 
 function getTimeRangeFilter(timeRange: string): string | null {
@@ -75,7 +89,7 @@ export async function GET(request: NextRequest) {
         const startDateFilter = getTimeRangeFilter(timeRange);
 
         const allItemsResult = await db.query(`
-      SELECT id, release_id, artist, title, year, format, genres, cover_image_url, condition, suggested_value
+      SELECT id, release_id, artist, title, year, format, genres, cover_image_url, condition, suggested_value, added_date
       FROM collection_items
     `);
 
@@ -90,6 +104,7 @@ export async function GET(request: NextRequest) {
             cover_image_url: string | null;
             condition: string | null;
             suggested_value: number | null;
+            added_date: string;
         };
         const allItems: DbItem[] = allItemsResult.rows as DbItem[];
 
@@ -180,6 +195,23 @@ export async function GET(request: NextRequest) {
             suggested_value: item.suggested_value,
         }));
 
+        // Get latest additions (most recently added items)
+        const sortedByAddedDate = [...allItems].sort((a, b) => 
+            new Date(b.added_date).getTime() - new Date(a.added_date).getTime()
+        );
+        const latestAdditions: LatestAddition[] = sortedByAddedDate.slice(0, 10).map((item) => ({
+            id: item.id,
+            release_id: item.release_id,
+            artist: item.artist,
+            title: item.title,
+            cover_image_url: item.cover_image_url,
+            condition: item.condition,
+            suggested_value: item.suggested_value,
+            added_date: item.added_date,
+            format: item.format,
+            year: item.year,
+        }));
+
         const itemsForDistribution = allItems;
 
         const genreDistribution: Record<string, number> = {};
@@ -265,6 +297,7 @@ export async function GET(request: NextRequest) {
             formatDistribution: sortedFormatDistribution,
             topValuableItems,
             leastValuableItems,
+            latestAdditions,
         };
 
         console.log(`Successfully calculated dashboard stats.`);

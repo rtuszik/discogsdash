@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import TimeSeriesChart from "@/components/TimeSeriesChart";
 import DistributionPieChart from "@/components/DistributionPieChart";
 import ValuableItemsList from "@/components/ValuableItemsList";
+import LatestAdditions from "@/components/LatestAdditions";
 import TimeRangeSelector, { TimeRange } from "@/components/TimeRangeSelector";
 
 interface ValuableItem {
@@ -14,6 +15,19 @@ interface ValuableItem {
     cover_image_url: string | null;
     condition: string | null;
     suggested_value: number | null;
+}
+
+interface LatestAddition {
+    id: number;
+    release_id: number;
+    artist: string | null;
+    title: string | null;
+    cover_image_url: string | null;
+    condition: string | null;
+    suggested_value: number | null;
+    added_date: string;
+    format: string | null;
+    year: number | null;
 }
 
 interface DashboardStats {
@@ -34,6 +48,7 @@ interface DashboardStats {
     formatDistribution: Record<string, number>;
     topValuableItems: ValuableItem[];
     leastValuableItems: ValuableItem[];
+    latestAdditions: LatestAddition[];
 }
 
 import type { SyncStatusResponse } from "@/app/api/collection/sync/status/route";
@@ -305,7 +320,7 @@ export default function DashboardPage() {
                     )}
 
                     {/* Value Lists Row */}
-                    <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                         <ValuableItemsList
                             title="Top 10 Most Valuable"
                             items={stats.topValuableItems}
@@ -314,6 +329,11 @@ export default function DashboardPage() {
                         <ValuableItemsList
                             title="Top 10 Least Valuable"
                             items={stats.leastValuableItems}
+                            currencyFormatter={formatCurrency}
+                        />
+                        <LatestAdditions
+                            title="Latest Additions"
+                            items={stats.latestAdditions}
                             currencyFormatter={formatCurrency}
                         />
                     </div>
