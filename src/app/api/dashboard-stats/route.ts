@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 interface ValuableItem {
     id: number;
@@ -34,11 +35,44 @@ interface DashboardStats {
     leastValuableItems: ValuableItem[];
 }
 
-export async function GET(_request: Request) {
+function getTimeRangeFilter(timeRange: string): string | null {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeRange) {
+        case '7d':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+        case '1m':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+        case '3m':
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+        case '6m':
+            startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+            break;
+        case '1y':
+            startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+        case 'all':
+        default:
+            return null; // No filter for 'all'
+    }
+
+    return startDate.toISOString();
+}
+
+export async function GET(request: NextRequest) {
     console.log("Received request for dashboard stats...");
 
     try {
         const db = await getDb();
+        
+        // Get time range from query parameters
+        const { searchParams } = new URL(request.url);
+        const timeRange = searchParams.get('timeRange') || '3m';
+        const startDateFilter = getTimeRangeFilter(timeRange);
 
         const allItemsResult = await db.query(`
       SELECT id, release_id, artist, title, year, format, genres, cover_image_url, condition, suggested_value
@@ -82,11 +116,20 @@ export async function GET(_request: Request) {
         const averageValuePerItem =
             totalItems > 0 && latestValueMean !== null ? latestValueMean / totalItems : null;
 
-        const historyResult = await db.query(`
+        // Build history query with optional time filter
+        let historyQuery = `
       SELECT timestamp, total_items, value_min, value_mean, value_max
-      FROM collection_stats_history
-      ORDER BY timestamp ASC
-    `);
+      FROM collection_stats_history`;
+        
+        const queryParams: string[] = [];
+        if (startDateFilter) {
+            historyQuery += ` WHERE timestamp >= $1`;
+            queryParams.push(startDateFilter);
+        }
+        
+        historyQuery += ` ORDER BY timestamp ASC`;
+        
+        const historyResult = await db.query(historyQuery, queryParams.length > 0 ? queryParams : undefined);
         const historyData = historyResult.rows as {
             timestamp: string;
             total_items: number;

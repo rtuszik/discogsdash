@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import TimeSeriesChart from "@/components/TimeSeriesChart";
 import DistributionPieChart from "@/components/DistributionPieChart";
 import ValuableItemsList from "@/components/ValuableItemsList";
+import TimeRangeSelector, { TimeRange } from "@/components/TimeRangeSelector";
 
 interface ValuableItem {
     id: number;
@@ -49,12 +50,13 @@ export default function DashboardPage() {
     });
     const [syncFetchError, setSyncFetchError] = useState<string | null>(null);
     const [finalSyncMessage, setFinalSyncMessage] = useState<string | null>(null);
+    const [timeRange, setTimeRange] = useState<TimeRange>('3m');
 
     const fetchStats = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch("/api/dashboard-stats");
+            const response = await fetch(`/api/dashboard-stats?timeRange=${timeRange}`);
             if (!response.ok) {
                 let errorDetails = `HTTP error! status: ${response.status}`;
                 try {
@@ -83,7 +85,7 @@ export default function DashboardPage() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [timeRange]);
 
     useEffect(() => {
         fetchStats();
@@ -284,8 +286,11 @@ export default function DashboardPage() {
                     {/* Value History Chart Row */}
                     {stats.valueHistory && stats.valueHistory.length > 0 && (
                         <div className="lg:col-span-4 bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold text-neutral-300">Collection Value Over Time</h3>
+                                <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+                            </div>
                             <TimeSeriesChart
-                                title="Collection Value Over Time"
                                 data={stats.valueHistory}
                                 lines={[
                                     { dataKey: "min", stroke: "#3b82f6", name: "Min Value (€)" }, // blue-500
@@ -294,6 +299,7 @@ export default function DashboardPage() {
                                 ]}
                                 yAxisLabel="Value (€)"
                                 syncing={isSyncing} // Pass syncing status
+                                timeRange={timeRange} // Pass time range for formatting
                             />
                         </div>
                     )}
@@ -316,14 +322,18 @@ export default function DashboardPage() {
                     <div className="lg:col-span-4 bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-neutral-300">Item Count Over Time</h3>
+                            <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+                        </div>
                         <TimeSeriesChart
-                            title="Item Count Over Time"
                             data={stats.itemCountHistory}
                             lines={[
                                 { dataKey: "count", stroke: "#60a5fa", name: "Total Items" }, // blue-400
                             ]}
                             yAxisLabel="Items"
                             syncing={isSyncing}
+                            timeRange={timeRange} // Pass time range for formatting
                         />
                     </div>
 

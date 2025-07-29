@@ -31,14 +31,28 @@ interface TimeSeriesChartProps {
   yAxisLabel?: string;
   xAxisDataKey?: string;
   syncing?: boolean; // Optional flag to show placeholder during sync
+  timeRange?: string; // Optional time range for custom formatting
 }
 
-// Helper to format date for XAxis tick
-const formatDateTick = (isoString: string): string => {
+// Helper to format date for XAxis tick based on time range
+const formatDateTick = (isoString: string, timeRange?: string): string => {
   try {
     const date = new Date(isoString);
-    // Simple date format (e.g., 'Apr 17'), adjust as needed
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    
+    switch (timeRange) {
+      case '7d':
+        return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+      case '1m':
+      case '3m':
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      case '6m':
+      case '1y':
+        return date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
+      case 'all':
+        return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      default:
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
   } catch (_e) { // Prefix unused variable
     return isoString; // Fallback
   }
@@ -61,6 +75,7 @@ export default function TimeSeriesChart({
   yAxisLabel,
   xAxisDataKey = 'timestamp',
   syncing = false,
+  timeRange,
 }: TimeSeriesChartProps) {
 
   if (syncing) {
@@ -97,7 +112,7 @@ export default function TimeSeriesChart({
              dataKey={xAxisDataKey}
              stroke="#737373" // neutral-500 Axis line color
              tick={{ fill: '#a3a3a3' }} // neutral-400 Tick label color
-             tickFormatter={formatDateTick}
+             tickFormatter={(value) => formatDateTick(value, timeRange)}
              dy={5}
            />
           <YAxis
@@ -112,19 +127,19 @@ export default function TimeSeriesChart({
              contentStyle={{ backgroundColor: '#171717', border: '1px solid #525252', color: '#e5e5e5' }} // neutral-900 bg, neutral-600 border, neutral-200 text
              itemStyle={{ color: '#e5e5e5' }} // neutral-200 item text
              formatter={(value: number, name: string) => [`${formatValueTick(value)} ${name === 'count' ? 'items' : ''}`, name]}
-             labelFormatter={formatDateTick}
+             labelFormatter={(value) => formatDateTick(value, timeRange)}
            />
           <Legend wrapperStyle={{ color: '#a3a3a3' }} /> {/* neutral-400 legend text */}
           {lines.map((line) => (
             <Line
               key={line.dataKey}
-              type="monotone"
+              type="monotoneX"
               dataKey={line.dataKey}
               name={line.name || line.dataKey}
               stroke={line.stroke}
-              strokeWidth={2}
-              dot={{ r: 3, fill: line.stroke }}
-              activeDot={{ r: 6 }}
+              strokeWidth={2.5}
+              dot={false} // Remove individual dots
+              activeDot={{ r: 5, fill: line.stroke, strokeWidth: 2, stroke: '#171717' }}
               connectNulls // Connect lines across null data points
             />
           ))}
