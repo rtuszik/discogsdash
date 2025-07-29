@@ -2,6 +2,19 @@ import { beforeAll, afterEach, afterAll } from 'vitest';
 import { server } from '../mocks/node'; // Import the MSW server
 import '@testing-library/jest-dom/vitest'; // Extend Vitest's expect with jest-dom matchers
 
+// Mock ResizeObserver for Recharts components
+global.ResizeObserver = class ResizeObserver {
+  observe() {
+    // do nothing
+  }
+  unobserve() {
+    // do nothing
+  }
+  disconnect() {
+    // do nothing
+  }
+};
+
 // --- MSW Setup ---
 // Start MSW server before all tests
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
