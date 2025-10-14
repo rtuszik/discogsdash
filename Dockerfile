@@ -36,8 +36,8 @@ COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/src ./src
 RUN npm run build:scripts
 RUN chown -R node:node ./dist-scripts
-RUN npm prune --omit=dev && \
-    rm -rf src tsconfig*.json # Keep package.json and package-lock.json for npm run start
+RUN rm -rf src tsconfig*.json node_modules
+RUN npm install --omit=dev
 
 
 USER node

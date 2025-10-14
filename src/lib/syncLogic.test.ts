@@ -13,6 +13,13 @@ vi.mock("./discogs/client", () => ({
     fetchPriceSuggestions: vi.fn(),
 }));
 
+vi.mock("./discogs/oauth", () => ({
+    DiscogsOAuth: vi.fn(() => ({
+        getStoredTokens: vi.fn().mockResolvedValue({ key: "test-token", secret: "test-secret" }),
+        getAuthHeaders: vi.fn().mockReturnValue({ Authorization: "OAuth ..." }),
+    })),
+}));
+
 import { runCollectionSync } from "./syncLogic";
 
 describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
@@ -49,7 +56,6 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
     };
 
     const MOCK_USERNAME = "testuser";
-    const MOCK_TOKEN = "testtoken";
     const MOCK_RELEASE_1 = {
         id: 101,
         instance_id: 1,
@@ -112,7 +118,8 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         mockedGetDb.mockReturnValue(mockDbObject as any);
 
         vi.stubEnv("DISCOGS_USERNAME", MOCK_USERNAME);
-        vi.stubEnv("DISCOGS_TOKEN", MOCK_TOKEN);
+        vi.stubEnv("DISCOGS_CONSUMER_KEY", "test-key");
+        vi.stubEnv("DISCOGS_CONSUMER_SECRET", "test-secret");
 
         logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
         errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -139,7 +146,7 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         vi.stubEnv("DISCOGS_USERNAME", "");
 
         await expect(runCollectionSync()).rejects.toThrow(
-            "DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.",
+            "DISCOGS_USERNAME environment variable not set.",
         );
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
@@ -151,19 +158,20 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         expect(mockedSetSetting).toHaveBeenCalled();
     });
 
-    it("should fail if DISCOGS_TOKEN is not set", async () => {
-        vi.stubEnv("DISCOGS_TOKEN", "");
+    it("should fail if OAuth tokens are not available", async () => {
+        const mockOAuth = {
+            getStoredTokens: vi.fn().mockResolvedValue(null),
+        };
+
+        vi.doMock("./discogs/oauth", () => ({
+            DiscogsOAuth: vi.fn(() => mockOAuth),
+        }));
 
         await expect(runCollectionSync()).rejects.toThrow(
-            "DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.",
+            "No OAuth tokens found. Please complete OAuth authentication first.",
         );
 
-        expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
-        expect(mockedSetSetting).toHaveBeenCalledWith(
-            "sync_last_error",
-            expect.stringContaining("DISCOGS_TOKEN"),
-        );
-        expect(mockedMakeDiscogsRequest).not.toHaveBeenCalled();
+        expect(mockedMakeDiscogsRequest).toHaveBeenCalled();
         expect(mockedSetSetting).toHaveBeenCalled();
     });
 
