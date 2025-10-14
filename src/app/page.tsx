@@ -52,12 +52,17 @@ interface DashboardStats {
 }
 
 import type { SyncStatusResponse } from "@/app/api/collection/sync/status/route";
+import type { AuthStatusResponse } from "@/app/api/auth/status/route";
+import Link from "next/link";
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [authLoading, setAuthLoading] = useState<boolean>(true);
+    const [username, setUsername] = useState<string | undefined>(undefined);
     const [syncStatus, setSyncStatus] = useState<SyncStatusResponse["status"]>("idle");
     const [syncProgress, setSyncProgress] = useState<{ current: number; total: number }>({
         current: 0,
@@ -102,9 +107,38 @@ export default function DashboardPage() {
         }
     }, [timeRange]);
 
+    const checkAuthStatus = useCallback(async () => {
+        setAuthLoading(true);
+        try {
+            const response = await fetch("/api/auth/status");
+            if (response.ok) {
+                const data: AuthStatusResponse = await response.json();
+                setIsAuthenticated(data.isAuthenticated);
+                setUsername(data.username);
+            } else {
+                setIsAuthenticated(false);
+                setUsername(undefined);
+            }
+        } catch (err) {
+            console.error("Failed to check auth status:", err);
+            setIsAuthenticated(false);
+            setUsername(undefined);
+        } finally {
+            setAuthLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        fetchStats();
-    }, [fetchStats]);
+        checkAuthStatus();
+    }, [checkAuthStatus]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchStats();
+        } else {
+            setIsLoading(false);
+        }
+    }, [fetchStats, isAuthenticated]);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -204,17 +238,33 @@ export default function DashboardPage() {
             <header className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold text-neutral-100">
                     Discogs Collection IQ
-                </h1>{" "}
-                {/* Updated text */}
-                <div>
-                    <button
-                        onClick={handleSync}
-                        disabled={isSyncing}
-                        className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-100 font-semibold py-2 px-4 rounded mr-4 transition duration-150 ease-in-out" // Updated colors
-                    >
-                        {isSyncing ? "Syncing..." : "Sync Collection"}
-                    </button>
-                    {/* Settings button removed */}
+                </h1>
+                <div className="flex items-center space-x-4">
+                    {authLoading ? (
+                        <div className="text-neutral-400">Loading...</div>
+                    ) : isAuthenticated ? (
+                        <>
+                            {username && (
+                                <span className="text-neutral-300 text-sm">
+                                    Welcome, {username}
+                                </span>
+                            )}
+                            <button
+                                onClick={handleSync}
+                                disabled={isSyncing}
+                                className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-100 font-semibold py-2 px-4 rounded transition duration-150 ease-in-out"
+                            >
+                                {isSyncing ? "Syncing..." : "Sync Collection"}
+                            </button>
+                        </>
+                    ) : (
+                        <Link
+                            href="/oauth/setup"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Connect to Discogs
+                        </Link>
+                    )}
                 </div>
             </header>
             {/* Sync Status/Error Messages */}
@@ -243,8 +293,37 @@ export default function DashboardPage() {
                     Status Update Error: {syncFetchError}
                 </div>
             )}
-            {isLoading ? (
-                <div className="text-center py-10 text-neutral-400">Loading dashboard data...</div> // Updated text color
+            {!isAuthenticated && !authLoading ? (
+                <div className="text-center py-20">
+                    <div className="max-w-md mx-auto">
+                        <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
+                            Welcome to Discogs Collection IQ
+                        </h2>
+                        <p className="text-neutral-300 mb-8">
+                            Connect your Discogs account to start analyzing your music collection with powerful insights and statistics.
+                        </p>
+                        <div className="space-y-4 text-left text-neutral-400">
+                            <div className="flex items-center">
+                                <span className="mr-3">📊</span>
+                                Track collection value and trends over time
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">🎵</span>
+                                Analyze genres, formats, and release years
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">💎</span>
+                                Discover your most and least valuable items
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">🔄</span>
+                                Automatic collection synchronization
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : isLoading ? (
+                <div className="text-center py-10 text-neutral-400">Loading dashboard data...</div>
             ) : stats ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* KPI Cards */}
