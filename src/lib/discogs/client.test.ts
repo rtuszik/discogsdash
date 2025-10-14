@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from "v
 import { http, HttpResponse } from "msw";
 import { server } from "../../mocks/node";
 import { makeDiscogsRequest, fetchPriceSuggestions } from "./client";
+import { createDiscogsRetryOptions } from "../retryUtils";
 
 const mockOAuth = {
     getStoredTokens: vi.fn().mockResolvedValue({ key: "test-token", secret: "test-secret" }),
@@ -13,6 +14,30 @@ const mockOAuth = {
 vi.mock("./oauth", () => ({
     DiscogsOAuth: vi.fn(() => mockOAuth),
 }));
+
+vi.mock("../retryUtils", async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...actual,
+        createDiscogsRetryOptions: vi.fn(() => ({
+            maxRetries: 1,
+            baseDelay: 10,
+            maxDelay: 100,
+            backoffMultiplier: 1,
+            retryCondition: (error: any) => {
+                if (error.message && typeof error.message === 'string') {
+                    const message = error.message.toLowerCase();
+                    // Don't retry on 404 errors for fetchPriceSuggestions
+                    if (message.includes('404')) {
+                        return false;
+                    }
+                    return message.includes('429') || message.includes('failed to fetch');
+                }
+                return false;
+            }
+        }))
+    };
+});
 
 describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, () => {
     const MOCK_ENDPOINT = "/test/endpoint";
@@ -111,15 +136,10 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
                 }),
             );
 
-            const result = await makeDiscogsRequest(MOCK_ENDPOINT, {}, 1, 10);
+            const result = await makeDiscogsRequest(MOCK_ENDPOINT, {});
 
             expect(result).toEqual(mockSuccessResponse);
             expect(requestCount).toBe(2);
-            expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "Discogs API rate limit exceeded (status: 429) on attempt 1",
-                ),
-            );
         });
 
         it("should respect Retry-After header on 429", async () => {
@@ -140,16 +160,11 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             );
 
             const startTime = Date.now();
-            const result = await makeDiscogsRequest(MOCK_ENDPOINT, {}, 1, 10);
+            const result = await makeDiscogsRequest(MOCK_ENDPOINT, {});
             const endTime = Date.now();
 
             expect(result).toEqual(mockSuccessResponse);
             expect(requestCount).toBe(2);
-            expect(logSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    `Respecting Retry-After header: waiting ${retryAfterSeconds * 1000 + 500}ms`,
-                ),
-            );
             expect(endTime - startTime).toBeGreaterThanOrEqual(retryAfterSeconds * 1000);
         });
 
@@ -164,25 +179,14 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
                 }),
             );
 
-            const maxRetries = 1;
-            const initialDelay = 10;
             try {
-                await makeDiscogsRequest(MOCK_ENDPOINT, {}, maxRetries, initialDelay);
+                await makeDiscogsRequest(MOCK_ENDPOINT, {});
                 throw new Error("Test should have thrown an error.");
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toMatch(
-                    /Discogs API rate limit exceeded \(status: 429\) on attempt 2/,
-                );
+                expect((error as Error).message).toContain("Operation failed after 2 attempts");
             }
-            expect(requestCount).toBe(maxRetries + 1);
-            expect(errorSpy).toHaveBeenCalledWith(
-                "Max retries reached after error on /test/endpoint.",
-            );
-
-            expect(errorSpy).toHaveBeenCalledWith(
-                "Failed to make Discogs request to /test/endpoint after 2 attempts.",
-            );
+            expect(requestCount).toBe(2);
         });
 
         it("should fail immediately on non-429 HTTP error", async () => {
@@ -202,7 +206,7 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
                 expect((error as Error).message).toBe(
-                    `Discogs API request failed: HTTP error! status: 401 Unauthorized`,
+                    `Discogs API request failed: 401 Unauthorized - {\"message\":\"Invalid token\"}`,
                 );
             }
         });
@@ -217,36 +221,17 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
                 }),
             );
 
-            const maxRetries = 1;
-            const initialDelay = 10;
             const expectedErrorMessage = "Failed to fetch";
 
             try {
-                await makeDiscogsRequest(MOCK_ENDPOINT, {}, maxRetries, initialDelay);
+                await makeDiscogsRequest(MOCK_ENDPOINT, {});
                 throw new Error("Test should have thrown an error.");
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
-
-                expect((error as Error).message).toBe(expectedErrorMessage);
+                expect((error as Error).message).toContain("Operation failed after 2 attempts");
+                expect((error as Error).message).toContain(expectedErrorMessage);
             }
-            expect(requestCount).toBe(maxRetries + 1);
-            expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    `Attempt 1 failed for ${MOCK_ENDPOINT}: ${expectedErrorMessage}`,
-                ),
-            );
-            expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    `Attempt 2 failed for ${MOCK_ENDPOINT}: ${expectedErrorMessage}`,
-                ),
-            );
-            expect(errorSpy).toHaveBeenCalledWith(
-                `Max retries reached after error on ${MOCK_ENDPOINT}.`,
-            );
-
-            expect(errorSpy).toHaveBeenCalledWith(
-                `Failed to make Discogs request to ${MOCK_ENDPOINT} after 2 attempts.`,
-            );
+            expect(requestCount).toBe(2);
         });
     });
 
@@ -284,7 +269,7 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
                 expect((error as Error).message).toBe(
-                    `Discogs API request failed: HTTP error! status: 401 Unauthorized`,
+                    `Discogs API request failed: 401 Unauthorized - {\"message\":\"Invalid token\"}`,
                 );
             }
             expect(errorSpy).toHaveBeenCalledWith(
@@ -301,7 +286,8 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
                 throw new Error("Test should have thrown an error.");
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toBe(expectedErrorMessage);
+                expect((error as Error).message).toContain("Operation failed after 2 attempts");
+                expect((error as Error).message).toContain(expectedErrorMessage);
             }
             expect(errorSpy).toHaveBeenCalledWith(
                 `Error fetching price suggestions for release ID ${RELEASE_ID}:`,

@@ -88,7 +88,7 @@ export async function fetchPriceSuggestions(
         const suggestions = await makeDiscogsRequest<PriceSuggestionsResponse>(endpoint);
         return suggestions;
     } catch (error: unknown) {
-        if (error instanceof Error && error.message.includes("status: 404")) {
+        if (error instanceof Error && error.message.includes("404")) {
             console.log(`No price suggestions found for release ID ${releaseId}.`);
             return null;
         }
