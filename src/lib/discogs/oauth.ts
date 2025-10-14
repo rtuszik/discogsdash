@@ -1,4 +1,3 @@
-import { createHmac } from "crypto";
 import OAuth from "oauth-1.0a";
 import { getSetting, setSetting } from "../db";
 import { withRetry, createDiscogsRetryOptions } from "../retryUtils";
@@ -15,17 +14,23 @@ interface OAuthTokens {
 
 
 // Simple file-based storage for request tokens (better than memory for Docker containers)
-import { writeFileSync, readFileSync, existsSync, unlinkSync } from "fs";
+import { writeFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from "fs";
 import { join } from "path";
 
 const TOKEN_STORAGE_DIR = "/tmp/oauth-tokens";
 
 function ensureStorageDir() {
     try {
-        const { mkdirSync } = require("fs");
         mkdirSync(TOKEN_STORAGE_DIR, { recursive: true });
-    } catch (err) {
-        // Directory might already exist
+    } catch (err: unknown) {
+        // Only ignore directory already exists errors
+        if (err && typeof err === 'object' && 'code' in err &&
+            (err.code === 'EEXIST' || err.code === 'EISDIR')) {
+            return; // Directory already exists, this is fine
+        }
+        // Log and rethrow other errors (permissions, ENOSPC, etc.)
+        console.error(`Failed to create OAuth token storage directory ${TOKEN_STORAGE_DIR}:`, err);
+        throw err;
     }
 }
 
@@ -51,7 +56,7 @@ function getRequestTokenSecret(token: string): string | null {
         }
 
         return data.secret;
-    } catch (err) {
+    } catch (_err) {
         return null;
     }
 }
