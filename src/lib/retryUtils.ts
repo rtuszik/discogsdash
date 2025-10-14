@@ -130,6 +130,13 @@ export function createDiscogsRetryOptions(): RetryOptions {
             if (error.message && typeof error.message === 'string') {
                 const message = error.message.toLowerCase();
 
+                // Don't retry on OAuth-specific authentication errors
+                if (message.includes('invalid request token') ||
+                    message.includes('invalid access token') ||
+                    message.includes('unauthorized') && message.includes('oauth')) {
+                    return false;
+                }
+
                 // Always retry on rate limiting
                 if (message.includes('429') || message.includes('too many requests')) {
                     return true;

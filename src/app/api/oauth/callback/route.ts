@@ -60,7 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             });
         }
     } catch (error) {
-        console.error("OAuth callback error:", error);
+        console.error("OAuth callback error:", error instanceof Error ? error.message : "Unknown error");
         return NextResponse.json(
             {
                 error: "Failed to complete OAuth authentication",

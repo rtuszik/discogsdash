@@ -90,7 +90,7 @@ export class DiscogsOAuth {
                 };
             }
         } catch (error) {
-            console.error("Error retrieving stored OAuth tokens:", error);
+            console.error("Error retrieving stored OAuth tokens:", error instanceof Error ? error.message : "Unknown error");
         }
         return null;
     }
@@ -100,7 +100,7 @@ export class DiscogsOAuth {
             await setSetting("oauth_token", tokens.key);
             await setSetting("oauth_token_secret", tokens.secret);
         } catch (error) {
-            console.error("Error storing OAuth tokens:", error);
+            console.error("Error storing OAuth tokens:", error instanceof Error ? error.message : "Unknown error");
             throw error;
         }
     }
@@ -118,8 +118,6 @@ export class DiscogsOAuth {
             const authHeaders = this.oauth.toHeader(this.oauth.authorize(requestData)) as unknown as Record<string, string>;
 
             console.log("🔑 Making OAuth request token request...");
-            console.log("Request headers:", authHeaders);
-            console.log("Consumer key:", this.consumerKey);
 
             const response = await fetch(REQUEST_TOKEN_URL, {
                 method: "GET",
@@ -169,7 +167,8 @@ export class DiscogsOAuth {
         requestTokenSecret: string,
         verifier: string,
     ): Promise<OAuthTokens> {
-        return withRetry(async () => {
+        // Separate the token acquisition from token storage to avoid retrying with consumed tokens
+        const tokens = await withRetry(async () => {
             const requestData = {
                 url: ACCESS_TOKEN_URL,
                 method: "POST",
@@ -211,15 +210,19 @@ export class DiscogsOAuth {
                 throw new Error("Invalid access token response");
             }
 
-            const tokens = {
+            console.log("✅ Successfully obtained access token");
+            return {
                 key: accessToken,
                 secret: accessTokenSecret,
             };
-
-            console.log("✅ Successfully obtained access token");
-            await this.storeTokens(tokens);
-            return tokens;
         }, createDiscogsRetryOptions());
+
+        // Store tokens separately with their own retry logic
+        await withRetry(async () => {
+            await this.storeTokens(tokens);
+        }, createDiscogsRetryOptions());
+
+        return tokens;
     }
 
     getAuthHeaders(url: string, method: string = "GET", tokens: OAuthTokens): Record<string, string> {

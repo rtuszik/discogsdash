@@ -4,18 +4,35 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
     if (!pool) {
+        // Try DATABASE_URL first, then fallback to individual POSTGRES_* vars
         const connectionString = process.env.DATABASE_URL;
 
-        if (!connectionString) {
-            throw new Error("DATABASE_URL environment variable is not set");
-        }
+        if (connectionString) {
+            pool = new Pool({
+                connectionString,
+                max: 20,
+                idleTimeoutMillis: 30000,
+                connectionTimeoutMillis: 10000,
+            });
+        } else {
+            // Use individual POSTGRES_* environment variables
+            const { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_HOST = 'localhost', POSTGRES_PORT = '5432' } = process.env;
 
-        pool = new Pool({
-            connectionString,
-            max: 20,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 10000,
-        });
+            if (!POSTGRES_USER || !POSTGRES_PASSWORD || !POSTGRES_DB) {
+                throw new Error("Either DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB environment variables must be set");
+            }
+
+            pool = new Pool({
+                user: POSTGRES_USER,
+                password: POSTGRES_PASSWORD,
+                database: POSTGRES_DB,
+                host: POSTGRES_HOST,
+                port: parseInt(POSTGRES_PORT, 10),
+                max: 20,
+                idleTimeoutMillis: 30000,
+                connectionTimeoutMillis: 10000,
+            });
+        }
 
         pool.on("error", (err) => {
             console.error("Unexpected error on idle PostgreSQL client", err);

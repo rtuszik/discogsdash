@@ -9,7 +9,7 @@ services:
         env_file: .env
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U discogsdash"]
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-discogsdash}"]
             interval: 10s
             timeout: 5s
             retries: 5
