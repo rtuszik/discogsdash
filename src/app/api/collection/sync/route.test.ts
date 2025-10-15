@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 
 vi.mock("@/lib/syncLogic", () => ({
@@ -6,6 +6,7 @@ vi.mock("@/lib/syncLogic", () => ({
 }));
 
 import { runCollectionSync } from "@/lib/syncLogic";
+
 const mockedRunCollectionSync = vi.mocked(runCollectionSync);
 
 describe("API Route: /api/collection/sync", () => {
@@ -75,4 +76,3 @@ describe("API Route: /api/collection/sync", () => {
         expect(errorSpy).toHaveBeenCalledWith("API Collection Sync Error:", nonErrorRejection);
     });
 });
-

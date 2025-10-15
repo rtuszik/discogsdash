@@ -1,5 +1,5 @@
 import { getDb, setSetting } from "./db";
-import { makeDiscogsRequest, fetchPriceSuggestions } from "./discogs/client";
+import { fetchPriceSuggestions, makeDiscogsRequest } from "./discogs/client";
 
 interface DiscogsPagination {
     page: number;
@@ -55,11 +55,9 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
         await setSetting("sync_last_error", "");
 
         const username = process.env.DISCOGS_USERNAME;
-        const token = process.env.DISCOGS_TOKEN;
 
-        if (!username || !token) {
-            const errorMsg =
-                "Sync failed: DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.";
+        if (!username) {
+            const errorMsg = "Sync failed: DISCOGS_USERNAME environment variable not set.";
             console.error(errorMsg);
             await setSetting("sync_status", "error");
             await setSetting("sync_last_error", errorMsg);
@@ -77,10 +75,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
             pageCount++;
             console.log(`Fetching collection page ${pageCount}: ${nextUrl}`);
 
-            if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
-
-            const response: DiscogsCollectionResponse =
-                await makeDiscogsRequest<DiscogsCollectionResponse>(nextUrl, token);
+            const response: DiscogsCollectionResponse = await makeDiscogsRequest<DiscogsCollectionResponse>(nextUrl);
             if (response && response.releases) {
                 allReleases = allReleases.concat(response.releases);
             } else {
@@ -105,9 +100,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
             }
         }
         const totalItemsToProcess = allReleases.length;
-        console.log(
-            `Fetched total ${totalItemsToProcess} items from collection across ${pageCount} pages.`,
-        );
+        console.log(`Fetched total ${totalItemsToProcess} items from collection across ${pageCount} pages.`);
         await setSetting("sync_total_items", totalItemsToProcess.toString());
 
         let valueResponse: DiscogsCollectionValue | null = null;
@@ -115,8 +108,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
             const valueEndpoint = `/users/${username}/collection/value`;
             console.log(`Fetching overall collection value: ${valueEndpoint}`);
 
-            if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
-            valueResponse = await makeDiscogsRequest<DiscogsCollectionValue>(valueEndpoint, token);
+            valueResponse = await makeDiscogsRequest<DiscogsCollectionValue>(valueEndpoint);
             console.log("Fetched overall collection value:", valueResponse);
         } catch (valueError) {
             console.error("Could not fetch overall collection value:", valueError);
@@ -165,11 +157,10 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
                 let lastCheckTimestamp: string | null = null;
 
                 try {
-                    if (!token) throw new Error("DISCOGS_TOKEN environment variable is missing.");
                     console.log(
                         `(${processedCount}/${allReleases.length}) Fetching price for release ID: ${release.id}`,
                     );
-                    const suggestions = await fetchPriceSuggestions(release.id, token);
+                    const suggestions = await fetchPriceSuggestions(release.id);
                     lastCheckTimestamp = new Date().toISOString();
 
                     const conditionOrder = [
@@ -188,9 +179,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
                         for (const condition of conditionOrder) {
                             if (suggestions[condition]) {
                                 itemSuggestedValue = suggestions[condition].value;
-                                console.log(
-                                    ` -> Using value for condition "${condition}": ${itemSuggestedValue}`,
-                                );
+                                console.log(` -> Using value for condition "${condition}": ${itemSuggestedValue}`);
                                 break;
                             }
                         }
@@ -201,10 +190,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
                         console.log(` -> No suggestions object received.`);
                     }
                 } catch (priceError) {
-                    console.error(
-                        `Failed to fetch price suggestions for release ID ${release.id}:`,
-                        priceError,
-                    );
+                    console.error(`Failed to fetch price suggestions for release ID ${release.id}:`, priceError);
                 }
 
                 const basicInfo = release.basic_information;
@@ -238,8 +224,7 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
                         basicInfo.year || null,
                         basicInfo.formats
                             ?.map(
-                                (f) =>
-                                    `${f.qty} x ${f.name}${f.descriptions ? ` (${f.descriptions.join(", ")})` : ""}`,
+                                (f) => `${f.qty} x ${f.name}${f.descriptions ? ` (${f.descriptions.join(", ")})` : ""}`,
                             )
                             .join("; ") || null,
                         JSON.stringify(basicInfo.genres || []),
@@ -283,12 +268,8 @@ export async function runCollectionSync(): Promise<{ itemCount: number; message:
     } catch (error) {
         console.error("Sync process failed:", error);
         await setSetting("sync_status", "error");
-        await setSetting(
-            "sync_last_error",
-            error instanceof Error ? error.message : "Unknown sync error",
-        );
+        await setSetting("sync_last_error", error instanceof Error ? error.message : "Unknown sync error");
 
         throw error;
     }
 }
-

@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { NextRequest } from "next/server";
 
 interface ValuableItem {
     id: number;
@@ -54,22 +53,22 @@ function getTimeRangeFilter(timeRange: string): string | null {
     let startDate: Date;
 
     switch (timeRange) {
-        case '7d':
+        case "7d":
             startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             break;
-        case '1m':
+        case "1m":
             startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             break;
-        case '3m':
+        case "3m":
             startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
             break;
-        case '6m':
+        case "6m":
             startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
             break;
-        case '1y':
+        case "1y":
             startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
             break;
-        case 'all':
+        case "all":
         default:
             return null; // No filter for 'all'
     }
@@ -82,10 +81,10 @@ export async function GET(request: NextRequest) {
 
     try {
         const db = await getDb();
-        
+
         // Get time range from query parameters
         const { searchParams } = new URL(request.url);
-        const timeRange = searchParams.get('timeRange') || '3m';
+        const timeRange = searchParams.get("timeRange") || "3m";
         const startDateFilter = getTimeRangeFilter(timeRange);
 
         const allItemsResult = await db.query(`
@@ -128,22 +127,21 @@ export async function GET(request: NextRequest) {
         const latestValueMean = latestStats?.value_mean ?? null;
         const latestValueMax = latestStats?.value_max ?? null;
 
-        const averageValuePerItem =
-            totalItems > 0 && latestValueMean !== null ? latestValueMean / totalItems : null;
+        const averageValuePerItem = totalItems > 0 && latestValueMean !== null ? latestValueMean / totalItems : null;
 
         // Build history query with optional time filter
         let historyQuery = `
       SELECT timestamp, total_items, value_min, value_mean, value_max
       FROM collection_stats_history`;
-        
+
         const queryParams: string[] = [];
         if (startDateFilter) {
             historyQuery += ` WHERE timestamp >= $1`;
             queryParams.push(startDateFilter);
         }
-        
+
         historyQuery += ` ORDER BY timestamp ASC`;
-        
+
         const historyResult = await db.query(historyQuery, queryParams.length > 0 ? queryParams : undefined);
         const historyData = historyResult.rows as {
             timestamp: string;
@@ -165,15 +163,9 @@ export async function GET(request: NextRequest) {
             max: row.value_max,
         }));
 
-        const itemsWithValue = allItems.filter(
-            (item) => item.suggested_value !== null && item.suggested_value > 0,
-        );
-        const sortedByValueDesc = [...itemsWithValue].sort(
-            (a, b) => b.suggested_value! - a.suggested_value!,
-        );
-        const sortedByValueAsc = [...itemsWithValue].sort(
-            (a, b) => a.suggested_value! - b.suggested_value!,
-        );
+        const itemsWithValue = allItems.filter((item) => item.suggested_value !== null && item.suggested_value > 0);
+        const sortedByValueDesc = [...itemsWithValue].sort((a, b) => b.suggested_value! - a.suggested_value!);
+        const sortedByValueAsc = [...itemsWithValue].sort((a, b) => a.suggested_value! - b.suggested_value!);
 
         const topValuableItems: ValuableItem[] = sortedByValueDesc.slice(0, 10).map((item) => ({
             id: item.id,
@@ -196,8 +188,8 @@ export async function GET(request: NextRequest) {
         }));
 
         // Get latest additions (most recently added items)
-        const sortedByAddedDate = [...allItems].sort((a, b) => 
-            new Date(b.added_date).getTime() - new Date(a.added_date).getTime()
+        const sortedByAddedDate = [...allItems].sort(
+            (a, b) => new Date(b.added_date).getTime() - new Date(a.added_date).getTime(),
         );
         const latestAdditions: LatestAddition[] = sortedByAddedDate.slice(0, 10).map((item) => ({
             id: item.id,
@@ -314,4 +306,3 @@ export async function GET(request: NextRequest) {
         );
     }
 }
-

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getDb, setSetting } from "./db";
-import { makeDiscogsRequest, fetchPriceSuggestions } from "./discogs/client";
+import { fetchPriceSuggestions, makeDiscogsRequest } from "./discogs/client";
 
 vi.mock("./db", () => ({
     getDb: vi.fn(),
@@ -11,6 +11,13 @@ vi.mock("./db", () => ({
 vi.mock("./discogs/client", () => ({
     makeDiscogsRequest: vi.fn(),
     fetchPriceSuggestions: vi.fn(),
+}));
+
+vi.mock("./discogs/oauth", () => ({
+    DiscogsOAuth: vi.fn(() => ({
+        getStoredTokens: vi.fn().mockResolvedValue({ key: "test-token", secret: "test-secret" }),
+        getAuthHeaders: vi.fn().mockReturnValue({ Authorization: "OAuth ..." }),
+    })),
 }));
 
 import { runCollectionSync } from "./syncLogic";
@@ -25,31 +32,18 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
     const mockedMakeDiscogsRequest = vi.mocked(makeDiscogsRequest);
     const mockedFetchPriceSuggestions = vi.mocked(fetchPriceSuggestions);
 
-    const mockDeleteStmtRun = vi.fn();
-    const mockInsertItemStmtRun = vi.fn();
-    const mockInsertStatsStmtRun = vi.fn();
-    const mockPrepare = vi.fn((sql: string) => {
-        if (sql.includes("DELETE FROM collection_items")) return { run: mockDeleteStmtRun };
-        if (sql.includes("INSERT OR REPLACE INTO collection_items"))
-            return { run: mockInsertItemStmtRun };
-        if (sql.includes("INSERT INTO collection_stats_history"))
-            return { run: mockInsertStatsStmtRun };
-        console.warn(`Unexpected DB prepare call in test: ${sql}`);
-        return { run: vi.fn() };
-    });
+    const mockClientQuery = vi.fn();
+    const mockClient = {
+        query: mockClientQuery,
+    };
     const mockTransaction = vi.fn((callback) => {
-        const executeTransaction = async (...args: any[]) => {
-            await callback(...args);
-        };
-        return executeTransaction;
+        return callback(mockClient);
     });
     const mockDbObject = {
-        prepare: mockPrepare,
         transaction: mockTransaction,
     };
 
     const MOCK_USERNAME = "testuser";
-    const MOCK_TOKEN = "testtoken";
     const MOCK_RELEASE_1 = {
         id: 101,
         instance_id: 1,
@@ -103,26 +97,26 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
     beforeEach(() => {
         vi.resetAllMocks();
 
-        mockDeleteStmtRun.mockClear();
-        mockInsertItemStmtRun.mockClear();
-        mockInsertStatsStmtRun.mockClear();
-        mockPrepare.mockClear();
+        mockClientQuery.mockClear();
         mockTransaction.mockClear();
 
         mockedGetDb.mockReturnValue(mockDbObject as any);
 
         vi.stubEnv("DISCOGS_USERNAME", MOCK_USERNAME);
-        vi.stubEnv("DISCOGS_TOKEN", MOCK_TOKEN);
+        vi.stubEnv("DISCOGS_CONSUMER_KEY", "test-key");
+        vi.stubEnv("DISCOGS_CONSUMER_SECRET", "test-secret");
 
         logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
         errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         mockedMakeDiscogsRequest
+            .mockReset()
             .mockResolvedValueOnce(MOCK_COLLECTION_PAGE_1)
             .mockResolvedValueOnce(MOCK_COLLECTION_PAGE_2)
             .mockResolvedValueOnce(MOCK_COLLECTION_VALUE);
         mockedFetchPriceSuggestions
+            .mockReset()
             .mockResolvedValueOnce(MOCK_PRICE_SUGGESTIONS_1)
             .mockResolvedValueOnce(MOCK_PRICE_SUGGESTIONS_2);
     });
@@ -138,33 +132,30 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
     it("should fail if DISCOGS_USERNAME is not set", async () => {
         vi.stubEnv("DISCOGS_USERNAME", "");
 
-        await expect(runCollectionSync()).rejects.toThrow(
-            "DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.",
-        );
+        await expect(runCollectionSync()).rejects.toThrow("DISCOGS_USERNAME environment variable not set.");
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
-        expect(mockedSetSetting).toHaveBeenCalledWith(
-            "sync_last_error",
-            expect.stringContaining("DISCOGS_USERNAME"),
-        );
+        expect(mockedSetSetting).toHaveBeenCalledWith("sync_last_error", expect.stringContaining("DISCOGS_USERNAME"));
         expect(mockedMakeDiscogsRequest).not.toHaveBeenCalled();
         expect(mockedSetSetting).toHaveBeenCalled();
     });
 
-    it("should fail if DISCOGS_TOKEN is not set", async () => {
-        vi.stubEnv("DISCOGS_TOKEN", "");
+    it("should fail if OAuth tokens are not available", async () => {
+        // Reset the mock and make it reject with OAuth error
+        mockedMakeDiscogsRequest
+            .mockReset()
+            .mockRejectedValue(new Error("No OAuth tokens found. Please complete OAuth authentication first."));
 
         await expect(runCollectionSync()).rejects.toThrow(
-            "DISCOGS_USERNAME or DISCOGS_TOKEN environment variables not set.",
+            "No OAuth tokens found. Please complete OAuth authentication first.",
         );
 
+        expect(mockedMakeDiscogsRequest).toHaveBeenCalled();
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
         expect(mockedSetSetting).toHaveBeenCalledWith(
             "sync_last_error",
-            expect.stringContaining("DISCOGS_TOKEN"),
+            "No OAuth tokens found. Please complete OAuth authentication first.",
         );
-        expect(mockedMakeDiscogsRequest).not.toHaveBeenCalled();
-        expect(mockedSetSetting).toHaveBeenCalled();
     });
 
     it("should successfully fetch collection, value, prices and update DB", async () => {
@@ -183,28 +174,34 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         const collectionUrlPage1 = `/users/${MOCK_USERNAME}/collection/folders/0/releases?per_page=100`;
         const collectionUrlPage2 = `/users/${MOCK_USERNAME}/collection/folders/0/releases?page=2&per_page=1`;
         const valueUrl = `/users/${MOCK_USERNAME}/collection/value`;
-        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(collectionUrlPage1, MOCK_TOKEN);
-        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(collectionUrlPage2, MOCK_TOKEN);
-        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(valueUrl, MOCK_TOKEN);
-        expect(mockedFetchPriceSuggestions).toHaveBeenCalledWith(MOCK_RELEASE_1.id, MOCK_TOKEN);
-        expect(mockedFetchPriceSuggestions).toHaveBeenCalledWith(MOCK_RELEASE_2.id, MOCK_TOKEN);
+        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(collectionUrlPage1);
+        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(collectionUrlPage2);
+        expect(mockedMakeDiscogsRequest).toHaveBeenCalledWith(valueUrl);
+        expect(mockedFetchPriceSuggestions).toHaveBeenCalledWith(MOCK_RELEASE_1.id);
+        expect(mockedFetchPriceSuggestions).toHaveBeenCalledWith(MOCK_RELEASE_2.id);
 
         expect(mockTransaction).toHaveBeenCalledOnce();
-        expect(mockPrepare).toHaveBeenCalledWith(
-            expect.stringContaining("DELETE FROM collection_items"),
+        expect(mockClientQuery).toHaveBeenCalledWith("DELETE FROM collection_items");
+        expect(mockClientQuery).toHaveBeenCalledWith(
+            expect.stringContaining("INSERT INTO collection_items"),
+            expect.any(Array),
         );
-        expect(mockPrepare).toHaveBeenCalledWith(
-            expect.stringContaining("INSERT OR REPLACE INTO collection_items"),
-        );
-        expect(mockPrepare).toHaveBeenCalledWith(
+        expect(mockClientQuery).toHaveBeenCalledWith(
             expect.stringContaining("INSERT INTO collection_stats_history"),
+            expect.any(Array),
         );
 
-        expect(mockDeleteStmtRun).toHaveBeenCalledOnce();
-        expect(mockInsertItemStmtRun).toHaveBeenCalledTimes(2);
-        expect(mockInsertStatsStmtRun).toHaveBeenCalledOnce();
+        // Should be called 4 times: DELETE, 2 INSERT items, 1 INSERT stats
+        expect(mockClientQuery).toHaveBeenCalledTimes(4);
 
-        expect(mockInsertItemStmtRun).toHaveBeenCalledWith(
+        // Check that the INSERT INTO collection_items was called with correct data
+        const itemInsertCalls = mockClientQuery.mock.calls.filter((call) =>
+            call[0].includes("INSERT INTO collection_items"),
+        );
+        expect(itemInsertCalls).toHaveLength(2);
+
+        // Check first item parameters
+        expect(itemInsertCalls[0][1]).toEqual([
             MOCK_RELEASE_1.instance_id,
             MOCK_RELEASE_1.id,
             "Artist A",
@@ -221,9 +218,10 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
             null,
             12.34,
             expect.any(String),
-        );
+        ]);
 
-        expect(mockInsertItemStmtRun).toHaveBeenCalledWith(
+        // Check second item parameters
+        expect(itemInsertCalls[1][1]).toEqual([
             MOCK_RELEASE_2.instance_id,
             MOCK_RELEASE_2.id,
             "Artist B",
@@ -240,15 +238,13 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
             null,
             5.67,
             expect.any(String),
-        );
+        ]);
 
-        expect(mockInsertStatsStmtRun).toHaveBeenCalledWith(
-            expect.any(String),
-            2,
-            10.0,
-            15.5,
-            25.0,
+        // Check stats history insert
+        const statsInsertCall = mockClientQuery.mock.calls.find((call) =>
+            call[0].includes("INSERT INTO collection_stats_history"),
         );
+        expect(statsInsertCall[1]).toEqual([expect.any(String), 2, 10.0, 15.5, 25.0]);
 
         expect(errorSpy).not.toHaveBeenCalled();
     });
@@ -263,13 +259,15 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "idle");
         expect(errorSpy).toHaveBeenCalledWith(
-            expect.stringContaining(
-                `Failed to fetch price suggestions for release ID ${MOCK_RELEASE_2.id}`,
-            ),
+            expect.stringContaining(`Failed to fetch price suggestions for release ID ${MOCK_RELEASE_2.id}`),
             expect.any(Error),
         );
 
-        expect(mockInsertItemStmtRun).toHaveBeenCalledWith(
+        // Check that the second item was inserted with null price value
+        const itemInsertCalls = mockClientQuery.mock.calls.filter((call) =>
+            call[0].includes("INSERT INTO collection_items"),
+        );
+        expect(itemInsertCalls[1][1]).toEqual([
             MOCK_RELEASE_2.instance_id,
             MOCK_RELEASE_2.id,
             expect.any(String),
@@ -286,7 +284,7 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
             null,
             null,
             null,
-        );
+        ]);
     });
 
     it("should handle errors during overall value fetching gracefully", async () => {
@@ -300,18 +298,13 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         await runCollectionSync();
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "idle");
-        expect(errorSpy).toHaveBeenCalledWith(
-            "Could not fetch overall collection value:",
-            expect.any(Error),
-        );
+        expect(errorSpy).toHaveBeenCalledWith("Could not fetch overall collection value:", expect.any(Error));
 
-        expect(mockInsertStatsStmtRun).toHaveBeenCalledWith(
-            expect.any(String),
-            2,
-            null,
-            null,
-            null,
+        // Check stats history insert with null values
+        const statsInsertCall = mockClientQuery.mock.calls.find((call) =>
+            call[0].includes("INSERT INTO collection_stats_history"),
         );
+        expect(statsInsertCall[1]).toEqual([expect.any(String), 2, null, null, null]);
     });
 
     it("should handle errors during collection fetching and set error status", async () => {
@@ -328,4 +321,3 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         expect(mockTransaction).not.toHaveBeenCalled();
     });
 });
-

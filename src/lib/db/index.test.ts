@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import Database from "better-sqlite3";
 
 import fs from "fs";
 import path from "path";
-import Database from "better-sqlite3";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("fs", () => ({
     existsSync: vi.fn(),
@@ -32,11 +32,7 @@ vi.mock("path", () => {
             return `/mock/project/resolved_fallback_${lastArg}`;
         }),
         join: vi.fn((...args: string[]) => {
-            if (
-                args.length === 2 &&
-                args[0] === MOCK_DB_DIR_INTERNAL &&
-                args[1] === "discogsdash.db"
-            )
+            if (args.length === 2 && args[0] === MOCK_DB_DIR_INTERNAL && args[1] === "discogsdash.db")
                 return MOCK_DB_PATH_INTERNAL;
             console.warn(`Unexpected path.join call in test: ${args}`);
             return `${args.join("_")}`;
@@ -50,11 +46,7 @@ vi.mock("path", () => {
                 return `/mock/project/resolved_fallback_${lastArg}`;
             }),
             join: vi.fn((...args: string[]) => {
-                if (
-                    args.length === 2 &&
-                    args[0] === MOCK_DB_DIR_INTERNAL &&
-                    args[1] === "discogsdash.db"
-                )
+                if (args.length === 2 && args[0] === MOCK_DB_DIR_INTERNAL && args[1] === "discogsdash.db")
                     return MOCK_DB_PATH_INTERNAL;
                 console.warn(`Unexpected path.join (default) call in test: ${args}`);
                 return `${args.join("_")}`;
@@ -83,7 +75,7 @@ vi.mock("better-sqlite3", () => ({
 const MOCK_CWD = "/mock/project";
 vi.spyOn(process, "cwd").mockReturnValue(MOCK_CWD);
 
-import { getDb, setSetting, getSetting, __resetDbInstanceForTest } from "./index";
+import { __resetDbInstanceForTest, getDb, getSetting, setSetting } from "./index";
 
 describe("Database Utilities (src/lib/db/index.ts)", () => {
     const MOCK_DB_DIR_EXPECTED = "/mock/project/.db";
@@ -144,10 +136,7 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
             );
 
             expect(mockedDatabaseConstructor).toHaveBeenCalledOnce();
-            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(
-                MOCK_DB_PATH_EXPECTED,
-                expect.any(Object),
-            );
+            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(MOCK_DB_PATH_EXPECTED, expect.any(Object));
             expect(mockDbPragma).toHaveBeenCalledWith("journal_mode = WAL");
             expect(mockDbExec).toHaveBeenCalledTimes(7);
             expect(db).toBe(mockDatabaseInstance);
@@ -172,10 +161,7 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
             expect(mockedFsAppendFileSync).not.toHaveBeenCalled();
 
             expect(mockedDatabaseConstructor).toHaveBeenCalledOnce();
-            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(
-                MOCK_DB_PATH_EXPECTED,
-                expect.any(Object),
-            );
+            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(MOCK_DB_PATH_EXPECTED, expect.any(Object));
             expect(mockDbPragma).toHaveBeenCalledWith("journal_mode = WAL");
             expect(mockDbExec).toHaveBeenCalledTimes(7);
             expect(db).toBe(mockDatabaseInstance);
@@ -203,10 +189,7 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
             );
 
             expect(mockedDatabaseConstructor).toHaveBeenCalledOnce();
-            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(
-                MOCK_DB_PATH_EXPECTED,
-                expect.any(Object),
-            );
+            expect(mockedDatabaseConstructor).toHaveBeenCalledWith(MOCK_DB_PATH_EXPECTED, expect.any(Object));
             expect(mockDbPragma).toHaveBeenCalledWith("journal_mode = WAL");
             expect(mockDbExec).toHaveBeenCalledTimes(7);
             expect(db).toBe(mockDatabaseInstance);
@@ -252,10 +235,7 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
             const db = getDb();
 
             expect(mockedFsAppendFileSync).toHaveBeenCalled();
-            expect(warnSpy).toHaveBeenCalledWith(
-                "Could not automatically update .gitignore:",
-                appendError,
-            );
+            expect(warnSpy).toHaveBeenCalledWith("Could not automatically update .gitignore:", appendError);
 
             expect(mockedDatabaseConstructor).toHaveBeenCalledOnce();
             expect(db).toBe(mockDatabaseInstance);
@@ -273,9 +253,7 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
             setSetting(testKey, testValue);
 
             expect(mockDbPrepare).toHaveBeenCalledOnce();
-            expect(mockDbPrepare).toHaveBeenCalledWith(
-                expect.stringContaining("INSERT OR REPLACE INTO settings"),
-            );
+            expect(mockDbPrepare).toHaveBeenCalledWith(expect.stringContaining("INSERT OR REPLACE INTO settings"));
             expect(mockDbRun).toHaveBeenCalledOnce();
             expect(mockDbRun).toHaveBeenCalledWith(testKey, testValue);
         });
@@ -320,4 +298,3 @@ describe("Database Utilities (src/lib/db/index.ts)", () => {
         });
     });
 });
-

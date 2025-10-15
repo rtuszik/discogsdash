@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import TimeSeriesChart from "@/components/TimeSeriesChart";
+import React, { useCallback, useEffect, useState } from "react";
 import DistributionPieChart from "@/components/DistributionPieChart";
-import ValuableItemsList from "@/components/ValuableItemsList";
 import LatestAdditions from "@/components/LatestAdditions";
-import TimeRangeSelector, { TimeRange } from "@/components/TimeRangeSelector";
+import TimeRangeSelector, { type TimeRange } from "@/components/TimeRangeSelector";
+import TimeSeriesChart from "@/components/TimeSeriesChart";
+import ValuableItemsList from "@/components/ValuableItemsList";
 
 interface ValuableItem {
     id: number;
@@ -51,6 +51,8 @@ interface DashboardStats {
     latestAdditions: LatestAddition[];
 }
 
+import Link from "next/link";
+import type { AuthStatusResponse } from "@/app/api/auth/status/route";
 import type { SyncStatusResponse } from "@/app/api/collection/sync/status/route";
 
 export default function DashboardPage() {
@@ -58,6 +60,9 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [authLoading, setAuthLoading] = useState<boolean>(true);
+    const [username, setUsername] = useState<string | undefined>(undefined);
     const [syncStatus, setSyncStatus] = useState<SyncStatusResponse["status"]>("idle");
     const [syncProgress, setSyncProgress] = useState<{ current: number; total: number }>({
         current: 0,
@@ -65,7 +70,7 @@ export default function DashboardPage() {
     });
     const [syncFetchError, setSyncFetchError] = useState<string | null>(null);
     const [finalSyncMessage, setFinalSyncMessage] = useState<string | null>(null);
-    const [timeRange, setTimeRange] = useState<TimeRange>('3m');
+    const [timeRange, setTimeRange] = useState<TimeRange>("3m");
 
     const fetchStats = useCallback(async () => {
         setIsLoading(true);
@@ -91,20 +96,45 @@ export default function DashboardPage() {
             setStats(data);
         } catch (err) {
             console.error("Failed to fetch stats:", err);
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "An unknown error occurred while fetching stats.",
-            );
+            setError(err instanceof Error ? err.message : "An unknown error occurred while fetching stats.");
             setStats(null);
         } finally {
             setIsLoading(false);
         }
     }, [timeRange]);
 
+    const checkAuthStatus = useCallback(async () => {
+        setAuthLoading(true);
+        try {
+            const response = await fetch("/api/auth/status");
+            if (response.ok) {
+                const data: AuthStatusResponse = await response.json();
+                setIsAuthenticated(data.isAuthenticated);
+                setUsername(data.username);
+            } else {
+                setIsAuthenticated(false);
+                setUsername(undefined);
+            }
+        } catch (err) {
+            console.error("Failed to check auth status:", err);
+            setIsAuthenticated(false);
+            setUsername(undefined);
+        } finally {
+            setAuthLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        fetchStats();
-    }, [fetchStats]);
+        checkAuthStatus();
+    }, [checkAuthStatus]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchStats();
+        } else {
+            setIsLoading(false);
+        }
+    }, [fetchStats, isAuthenticated]);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -127,8 +157,7 @@ export default function DashboardPage() {
             console.log("Sync initiated via API call.");
         } catch (err) {
             console.error("Sync initiation failed:", err);
-            const errorMessage =
-                err instanceof Error ? err.message : "An unknown error occurred initiating sync.";
+            const errorMessage = err instanceof Error ? err.message : "An unknown error occurred initiating sync.";
             setError(`Sync Error: ${errorMessage}`); // Show general error
             setIsSyncing(false); // Stop syncing process on initiation failure
             setSyncStatus("error");
@@ -163,9 +192,7 @@ export default function DashboardPage() {
                 }
             } catch (err) {
                 console.error("Failed to fetch sync status:", err);
-                setSyncFetchError(
-                    err instanceof Error ? err.message : "Failed to get sync status.",
-                );
+                setSyncFetchError(err instanceof Error ? err.message : "Failed to get sync status.");
                 // Optional: Stop syncing/polling on status fetch error after a few retries?
                 // setIsSyncing(false);
                 // if (intervalId) clearInterval(intervalId);
@@ -202,19 +229,29 @@ export default function DashboardPage() {
             {" "}
             {/* Updated bg and text */}
             <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold text-neutral-100">
-                    Discogs Collection IQ
-                </h1>{" "}
-                {/* Updated text */}
-                <div>
-                    <button
-                        onClick={handleSync}
-                        disabled={isSyncing}
-                        className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-100 font-semibold py-2 px-4 rounded mr-4 transition duration-150 ease-in-out" // Updated colors
-                    >
-                        {isSyncing ? "Syncing..." : "Sync Collection"}
-                    </button>
-                    {/* Settings button removed */}
+                <h1 className="text-3xl md:text-4xl font-bold text-neutral-100">Discogs Collection IQ</h1>
+                <div className="flex items-center space-x-4">
+                    {authLoading ? (
+                        <div className="text-neutral-400">Loading...</div>
+                    ) : isAuthenticated ? (
+                        <>
+                            {username && <span className="text-neutral-300 text-sm">Welcome, {username}</span>}
+                            <button
+                                onClick={handleSync}
+                                disabled={isSyncing}
+                                className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-100 font-semibold py-2 px-4 rounded transition duration-150 ease-in-out"
+                            >
+                                {isSyncing ? "Syncing..." : "Sync Collection"}
+                            </button>
+                        </>
+                    ) : (
+                        <Link
+                            href="/oauth/setup"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Connect to Discogs
+                        </Link>
+                    )}
                 </div>
             </header>
             {/* Sync Status/Error Messages */}
@@ -230,9 +267,7 @@ export default function DashboardPage() {
             )}
             {/* Ensure final message only shows when sync is NOT running and message exists */}
             {finalSyncMessage && !isSyncing && syncStatus !== "running" && (
-                <div className="mb-4 p-3 bg-green-800 text-green-100 rounded">
-                    {finalSyncMessage}
-                </div>
+                <div className="mb-4 p-3 bg-green-800 text-green-100 rounded">{finalSyncMessage}</div>
             )}
             {/* Show general errors when not syncing or if sync ended in error */}
             {error && (!isSyncing || syncStatus === "error") && (
@@ -243,29 +278,52 @@ export default function DashboardPage() {
                     Status Update Error: {syncFetchError}
                 </div>
             )}
-            {isLoading ? (
-                <div className="text-center py-10 text-neutral-400">Loading dashboard data...</div> // Updated text color
+            {!isAuthenticated && !authLoading ? (
+                <div className="text-center py-20">
+                    <div className="max-w-md mx-auto">
+                        <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
+                            Welcome to Discogs Collection IQ
+                        </h2>
+                        <p className="text-neutral-300 mb-8">
+                            Connect your Discogs account to start analyzing your music collection with powerful insights
+                            and statistics.
+                        </p>
+                        <div className="space-y-4 text-left text-neutral-400">
+                            <div className="flex items-center">
+                                <span className="mr-3">📊</span>
+                                Track collection value and trends over time
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">🎵</span>
+                                Analyze genres, formats, and release years
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">💎</span>
+                                Discover your most and least valuable items
+                            </div>
+                            <div className="flex items-center">
+                                <span className="mr-3">🔄</span>
+                                Automatic collection synchronization
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : isLoading ? (
+                <div className="text-center py-10 text-neutral-400">Loading dashboard data...</div>
             ) : stats ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* KPI Cards */}
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Total Items
-                        </h2>{" "}
-                        {/* Updated text */}
-                        <p className="text-3xl font-semibold text-neutral-100">
-                            {stats.totalItems ?? "N/A"}
-                        </p>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Total Items</h2> {/* Updated text */}
+                        <p className="text-3xl font-semibold text-neutral-100">{stats.totalItems ?? "N/A"}</p>{" "}
                         {/* Updated text */}
                     </div>
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Collection Value (Mean)
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Collection Value (Mean)</h2>{" "}
                         {/* Reverted Label */}
                         <p className="text-3xl font-semibold text-neutral-100">
                             {formatCurrency(stats.latestValueMean)}
@@ -275,22 +333,17 @@ export default function DashboardPage() {
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Value Range (Min/Max)
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Value Range (Min/Max)</h2>{" "}
                         {/* Updated text */}
                         <p className="text-xl font-semibold text-neutral-100">
-                            {formatCurrency(stats.latestValueMin)} /{" "}
-                            {formatCurrency(stats.latestValueMax)}
+                            {formatCurrency(stats.latestValueMin)} / {formatCurrency(stats.latestValueMax)}
                         </p>{" "}
                         {/* Updated text */}
                     </div>
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Average Value / Item
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Average Value / Item</h2>{" "}
                         {/* Updated text */}
                         <p className="text-3xl font-semibold text-neutral-100">
                             {formatCurrency(stats.averageValuePerItem)}
@@ -363,12 +416,9 @@ export default function DashboardPage() {
                         <div className="bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
                             {" "}
                             {/* Replaced shadow with border */}
-                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">
-                                Top Genres
-                            </h2>{" "}
+                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">Top Genres</h2>{" "}
                             {/* Updated text */}
-                            {stats.genreDistribution &&
-                            Object.keys(stats.genreDistribution).length > 0 ? (
+                            {stats.genreDistribution && Object.keys(stats.genreDistribution).length > 0 ? (
                                 <ul className="space-y-2 max-h-60 overflow-y-auto text-sm text-neutral-300">
                                     {" "}
                                     {/* Updated text */}
@@ -377,9 +427,7 @@ export default function DashboardPage() {
                                         .map(([genre, count]) => (
                                             <li key={genre} className="flex justify-between">
                                                 <span>{genre}</span>
-                                                <span className="font-medium text-neutral-500">
-                                                    {count}
-                                                </span>{" "}
+                                                <span className="font-medium text-neutral-500">{count}</span>{" "}
                                                 {/* Updated text */}
                                             </li>
                                         ))}
@@ -406,12 +454,9 @@ export default function DashboardPage() {
                         <div className="bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
                             {" "}
                             {/* Replaced shadow with border */}
-                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">
-                                Formats
-                            </h2>{" "}
+                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">Formats</h2>{" "}
                             {/* Updated text */}
-                            {stats.formatDistribution &&
-                            Object.keys(stats.formatDistribution).length > 0 ? (
+                            {stats.formatDistribution && Object.keys(stats.formatDistribution).length > 0 ? (
                                 <ul className="space-y-2 max-h-60 overflow-y-auto text-sm text-neutral-300">
                                     {" "}
                                     {/* Updated text */}
@@ -420,9 +465,7 @@ export default function DashboardPage() {
                                         .map(([format, count]) => (
                                             <li key={format} className="flex justify-between">
                                                 <span>{format}</span>
-                                                <span className="font-medium text-neutral-500">
-                                                    {count}
-                                                </span>{" "}
+                                                <span className="font-medium text-neutral-500">{count}</span>{" "}
                                                 {/* Updated text */}
                                             </li>
                                         ))}

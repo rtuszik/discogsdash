@@ -14,10 +14,6 @@ export async function GET(_request: Request) {
         if (error instanceof Error) {
             errorMessage = error.message;
         }
-        return NextResponse.json(
-            { message: "Failed to sync collection", error: errorMessage },
-            { status: 500 },
-        );
+        return NextResponse.json({ message: "Failed to sync collection", error: errorMessage }, { status: 500 });
     }
 }
-

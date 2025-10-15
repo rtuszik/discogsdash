@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 
 // Define the base URL for the Discogs API
 const discogsApiBaseUrl = "https://api.discogs.com";
@@ -13,4 +13,3 @@ const discogsApiBaseUrl = "https://api.discogs.com";
 export const handlers = [
     // TODO: Add specific Discogs API handlers here as tests are written
 ];
-
