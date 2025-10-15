@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { GET } from "./route";
-import { SyncStatusResponse } from "./route";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GET, type SyncStatusResponse } from "./route";
 
 vi.mock("@/lib/db", () => ({
     getSetting: vi.fn(),
 }));
 
 import { getSetting } from "@/lib/db";
+
 const mockedGetSetting = vi.mocked(getSetting);
 
 describe("API Route: /api/collection/sync/status", () => {
@@ -178,4 +178,3 @@ describe("API Route: /api/collection/sync/status", () => {
         expect(errorSpy).toHaveBeenCalledWith("Error fetching sync status:", dbError);
     });
 });
-

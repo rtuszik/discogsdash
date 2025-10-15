@@ -1,12 +1,11 @@
 import Database from "better-sqlite3";
-import { Pool } from "pg";
-import path from "path";
 import fs from "fs";
+import path from "path";
+import { Pool } from "pg";
 
 const SQLITE_DB_PATH = path.join(process.cwd(), ".db", "discogsdash.db");
 const POSTGRES_URL =
-    process.env.DATABASE_URL ||
-    "postgresql://discogsdash:discogsdash_password@localhost:5432/discogsdash";
+    process.env.DATABASE_URL || "postgresql://discogsdash:discogsdash_password@localhost:5432/discogsdash";
 
 interface MigrationStats {
     settings: number;
@@ -97,9 +96,7 @@ async function migrate() {
             console.log(`   ✓ Migrated ${stats.collectionItems} collection items\n`);
 
             console.log("📊 Migrating collection stats history...");
-            const history = sqlite
-                .prepare("SELECT * FROM collection_stats_history ORDER BY timestamp ASC")
-                .all();
+            const history = sqlite.prepare("SELECT * FROM collection_stats_history ORDER BY timestamp ASC").all();
 
             for (const record of history) {
                 await client.query(
@@ -109,13 +106,7 @@ async function migrate() {
           ) VALUES ($1, $2, $3, $4, $5)
           ON CONFLICT (timestamp) DO NOTHING
         `,
-                    [
-                        record.timestamp,
-                        record.total_items,
-                        record.value_min,
-                        record.value_mean,
-                        record.value_max,
-                    ],
+                    [record.timestamp, record.total_items, record.value_min, record.value_mean, record.value_max],
                 );
                 stats.statsHistory++;
             }
@@ -147,4 +138,3 @@ async function migrate() {
 
 console.log("Starting migration...\n");
 migrate();
-

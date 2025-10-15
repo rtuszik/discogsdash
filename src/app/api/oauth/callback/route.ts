@@ -1,33 +1,58 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { DiscogsOAuth } from "@/lib/discogs/oauth";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
-        const body = await request.json();
-        const { verifier, requestToken } = body;
-
-        if (!verifier) {
+        // Check content type before parsing JSON
+        const contentType = request.headers.get("content-type");
+        if (!contentType || !contentType.startsWith("application/json")) {
             return NextResponse.json(
                 {
-                    error: "Missing required parameters",
-                    required: ["verifier"],
-                    optional: ["requestToken"],
+                    error: "Invalid content type",
+                    message: "Content-Type must be application/json",
+                },
+                { status: 400 },
+            );
+        }
+
+        // Parse JSON with error handling
+        let body;
+        try {
+            body = await request.json();
+        } catch (_parseError) {
+            return NextResponse.json(
+                {
+                    error: "Invalid JSON",
+                    message: "Request body must be valid JSON",
+                },
+                { status: 400 },
+            );
+        }
+
+        const { verifier, requestToken } = body;
+
+        // Validate that verifier and requestToken exist and are strings
+        if (!verifier || typeof verifier !== "string") {
+            return NextResponse.json(
+                {
+                    error: "Missing or invalid verifier",
+                    message: "verifier must be a non-empty string",
+                },
+                { status: 400 },
+            );
+        }
+
+        if (!requestToken || typeof requestToken !== "string") {
+            return NextResponse.json(
+                {
+                    error: "Missing or invalid requestToken",
+                    message: "requestToken must be a non-empty string",
                 },
                 { status: 400 },
             );
         }
 
         const oauth = new DiscogsOAuth();
-
-        if (!requestToken) {
-            return NextResponse.json(
-                {
-                    error: "Request token is required",
-                    message: "Please provide the requestToken you received from /api/oauth/setup",
-                },
-                { status: 400 },
-            );
-        }
 
         const requestTokenSecret = oauth.getStoredRequestTokenSecret(requestToken);
         if (!requestTokenSecret) {

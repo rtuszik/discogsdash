@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 
 vi.mock("@/lib/db", () => ({
@@ -214,4 +214,3 @@ describe("API Route: /api/dashboard-stats", () => {
         expect(errorSpy).toHaveBeenCalledWith("Dashboard Stats Error:", dbError);
     });
 });
-

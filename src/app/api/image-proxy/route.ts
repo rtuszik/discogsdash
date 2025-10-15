@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 const USER_AGENT =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
@@ -17,13 +17,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (imageUrl.startsWith("/")) {
-        console.warn(
-            `Attempted to proxy local file, which is not supported by this proxy: ${imageUrl}`,
-        );
-        return NextResponse.json(
-            { message: "Proxying local files is not supported" },
-            { status: 400 },
-        );
+        console.warn(`Attempted to proxy local file, which is not supported by this proxy: ${imageUrl}`);
+        return NextResponse.json({ message: "Proxying local files is not supported" }, { status: 400 });
     }
 
     try {
@@ -35,15 +30,10 @@ export async function GET(request: NextRequest) {
         });
 
         if (!response.ok) {
-            console.error(
-                `Failed to fetch image from ${imageUrl}. Status: ${response.status} ${response.statusText}`,
-            );
+            console.error(`Failed to fetch image from ${imageUrl}. Status: ${response.status} ${response.statusText}`);
 
             const status = response.status >= 400 && response.status < 600 ? response.status : 502;
-            return NextResponse.json(
-                { message: `Failed to fetch image: ${response.statusText}` },
-                { status },
-            );
+            return NextResponse.json({ message: `Failed to fetch image: ${response.statusText}` }, { status });
         }
 
         const contentType = response.headers.get("content-type") || "application/octet-stream";
@@ -51,10 +41,7 @@ export async function GET(request: NextRequest) {
 
         if (!body) {
             console.error(`Fetched image from ${imageUrl} but response body was null.`);
-            return NextResponse.json(
-                { message: "Image fetch succeeded but response body was empty" },
-                { status: 500 },
-            );
+            return NextResponse.json({ message: "Image fetch succeeded but response body was empty" }, { status: 500 });
         }
 
         const headers = new Headers();
@@ -76,10 +63,6 @@ export async function GET(request: NextRequest) {
         if (error instanceof Error) {
             errorMessage = error.message;
         }
-        return NextResponse.json(
-            { message: "Failed to proxy image", error: errorMessage },
-            { status: 500 },
-        );
+        return NextResponse.json({ message: "Failed to proxy image", error: errorMessage }, { status: 500 });
     }
 }
-

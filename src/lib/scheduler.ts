@@ -9,13 +9,9 @@ export function setupScheduler() {
     const effectiveCronSchedule = process.env.SYNC_CRON_SCHEDULE || DEFAULT_CRON_SCHEDULE;
 
     if (process.env.SYNC_CRON_SCHEDULE) {
-        console.log(
-            `Using custom cron schedule from SYNC_CRON_SCHEDULE: "${effectiveCronSchedule}"`,
-        );
+        console.log(`Using custom cron schedule from SYNC_CRON_SCHEDULE: "${effectiveCronSchedule}"`);
     } else {
-        console.log(
-            `Using default cron schedule: "${effectiveCronSchedule}". Set SYNC_CRON_SCHEDULE to override.`,
-        );
+        console.log(`Using default cron schedule: "${effectiveCronSchedule}". Set SYNC_CRON_SCHEDULE to override.`);
     }
 
     if (!cron.validate(effectiveCronSchedule)) {
@@ -32,14 +28,10 @@ export function setupScheduler() {
         effectiveCronSchedule,
         async () => {
             const startTime = new Date();
-            console.log(
-                `[${startTime.toISOString()}] Cron job triggered. Starting collection sync...`,
-            );
+            console.log(`[${startTime.toISOString()}] Cron job triggered. Starting collection sync...`);
             try {
                 const result = await runCollectionSync();
-                console.log(
-                    `[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`,
-                );
+                console.log(`[${new Date().toISOString()}] Scheduled sync finished successfully: ${result.message}`);
             } catch (error) {
                 console.error(`[${new Date().toISOString()}] Scheduled sync failed:`, error);
             }
@@ -59,4 +51,3 @@ if (require.main === module) {
 } else {
     console.log("Scheduler module loaded as a dependency.");
 }
-

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import cron from "node-cron";
-import { runCollectionSync } from "./syncLogic";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupScheduler } from "./scheduler";
+import { runCollectionSync } from "./syncLogic";
 
 vi.mock("./syncLogic", () => ({
     runCollectionSync: vi.fn(),
@@ -54,9 +54,7 @@ describe("Scheduler (src/lib/scheduler.ts)", () => {
         expect(logSpy).toHaveBeenCalledWith(
             `Using default cron schedule: "${DEFAULT_CRON_SCHEDULE}". Set SYNC_CRON_SCHEDULE to override.`,
         );
-        expect(logSpy).toHaveBeenCalledWith(
-            `Scheduling collection sync with pattern: "${DEFAULT_CRON_SCHEDULE}"`,
-        );
+        expect(logSpy).toHaveBeenCalledWith(`Scheduling collection sync with pattern: "${DEFAULT_CRON_SCHEDULE}"`);
         expect(logSpy).toHaveBeenCalledWith("Cron job scheduled successfully.");
     });
 
@@ -74,12 +72,8 @@ describe("Scheduler (src/lib/scheduler.ts)", () => {
             expect.any(Function),
             expect.objectContaining({ scheduled: true, timezone: "Europe/Berlin" }),
         );
-        expect(logSpy).toHaveBeenCalledWith(
-            `Using custom cron schedule from SYNC_CRON_SCHEDULE: "${customSchedule}"`,
-        );
-        expect(logSpy).toHaveBeenCalledWith(
-            `Scheduling collection sync with pattern: "${customSchedule}"`,
-        );
+        expect(logSpy).toHaveBeenCalledWith(`Using custom cron schedule from SYNC_CRON_SCHEDULE: "${customSchedule}"`);
+        expect(logSpy).toHaveBeenCalledWith(`Scheduling collection sync with pattern: "${customSchedule}"`);
         expect(logSpy).toHaveBeenCalledWith("Cron job scheduled successfully.");
     });
 
@@ -108,9 +102,7 @@ describe("Scheduler (src/lib/scheduler.ts)", () => {
         await scheduledTask();
 
         expect(mockedRunCollectionSync).toHaveBeenCalledOnce();
-        expect(logSpy).toHaveBeenCalledWith(
-            expect.stringContaining("Cron job triggered. Starting collection sync..."),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Cron job triggered. Starting collection sync..."));
         expect(logSpy).toHaveBeenCalledWith(
             expect.stringContaining("Scheduled sync finished successfully: Mock Sync Success"),
         );
@@ -129,16 +121,8 @@ describe("Scheduler (src/lib/scheduler.ts)", () => {
         await scheduledTask();
 
         expect(mockedRunCollectionSync).toHaveBeenCalledOnce();
-        expect(logSpy).toHaveBeenCalledWith(
-            expect.stringContaining("Cron job triggered. Starting collection sync..."),
-        );
-        expect(errorSpy).toHaveBeenCalledWith(
-            expect.stringContaining("Scheduled sync failed:"),
-            testError,
-        );
-        expect(logSpy).not.toHaveBeenCalledWith(
-            expect.stringContaining("Scheduled sync finished successfully"),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Cron job triggered. Starting collection sync..."));
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Scheduled sync failed:"), testError);
+        expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining("Scheduled sync finished successfully"));
     });
 });
-

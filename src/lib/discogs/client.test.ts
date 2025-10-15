@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from "vitest";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from "vitest";
 import { server } from "../../mocks/node";
-import { makeDiscogsRequest, fetchPriceSuggestions } from "./client";
 import { createDiscogsRetryOptions } from "../retryUtils";
+import { fetchPriceSuggestions, makeDiscogsRequest } from "./client";
 
 const mockOAuth = {
     getStoredTokens: vi.fn().mockResolvedValue({ key: "test-token", secret: "test-secret" }),
     getAuthHeaders: vi.fn().mockReturnValue({
-        Authorization: 'OAuth oauth_consumer_key="test-key",oauth_token="test-token",oauth_signature_method="PLAINTEXT",oauth_timestamp="1234567890",oauth_nonce="test-nonce",oauth_version="1.0",oauth_signature="test-signature"'
+        Authorization:
+            'OAuth oauth_consumer_key="test-key",oauth_token="test-token",oauth_signature_method="PLAINTEXT",oauth_timestamp="1234567890",oauth_nonce="test-nonce",oauth_version="1.0",oauth_signature="test-signature"',
     }),
 };
 
@@ -25,17 +26,17 @@ vi.mock("../retryUtils", async (importOriginal) => {
             maxDelay: 100,
             backoffMultiplier: 1,
             retryCondition: (error: any) => {
-                if (error.message && typeof error.message === 'string') {
+                if (error.message && typeof error.message === "string") {
                     const message = error.message.toLowerCase();
                     // Don't retry on 404 errors for fetchPriceSuggestions
-                    if (message.includes('404')) {
+                    if (message.includes("404")) {
                         return false;
                     }
-                    return message.includes('429') || message.includes('failed to fetch');
+                    return message.includes("429") || message.includes("failed to fetch");
                 }
                 return false;
-            }
-        }))
+            },
+        })),
     };
 });
 
@@ -56,7 +57,8 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
 
         mockOAuth.getStoredTokens.mockResolvedValue({ key: "test-token", secret: "test-secret" });
         mockOAuth.getAuthHeaders.mockReturnValue({
-            Authorization: 'OAuth oauth_consumer_key="test-key",oauth_token="test-token",oauth_signature_method="PLAINTEXT",oauth_timestamp="1234567890",oauth_nonce="test-nonce",oauth_version="1.0",oauth_signature="test-signature"'
+            Authorization:
+                'OAuth oauth_consumer_key="test-key",oauth_token="test-token",oauth_signature_method="PLAINTEXT",oauth_timestamp="1234567890",oauth_nonce="test-nonce",oauth_version="1.0",oauth_signature="test-signature"',
         });
 
         logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -206,7 +208,7 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
                 expect((error as Error).message).toBe(
-                    `Discogs API request failed: 401 Unauthorized - {\"message\":\"Invalid token\"}`,
+                    `Discogs API request failed: 401 Unauthorized - {"message":"Invalid token"}`,
                 );
             }
         });
@@ -251,17 +253,13 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             server.use(http.get(PRICE_URL, () => new HttpResponse(null, { status: 404 })));
             const result = await fetchPriceSuggestions(RELEASE_ID);
             expect(result).toBeNull();
-            expect(logSpy).toHaveBeenCalledWith(
-                `No price suggestions found for release ID ${RELEASE_ID}.`,
-            );
+            expect(logSpy).toHaveBeenCalledWith(`No price suggestions found for release ID ${RELEASE_ID}.`);
         });
 
         it("should re-throw error if fetch returns a non-404 error", async () => {
             const errorJson = { message: "Invalid token" };
             server.use(
-                http.get(PRICE_URL, () =>
-                    HttpResponse.json(errorJson, { status: 401, statusText: "Unauthorized" }),
-                ),
+                http.get(PRICE_URL, () => HttpResponse.json(errorJson, { status: 401, statusText: "Unauthorized" })),
             );
             try {
                 await fetchPriceSuggestions(RELEASE_ID);
@@ -269,7 +267,7 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
                 expect((error as Error).message).toBe(
-                    `Discogs API request failed: 401 Unauthorized - {\"message\":\"Invalid token\"}`,
+                    `Discogs API request failed: 401 Unauthorized - {"message":"Invalid token"}`,
                 );
             }
             expect(errorSpy).toHaveBeenCalledWith(
@@ -296,4 +294,3 @@ describe("Discogs API Client (src/lib/discogs/client.ts)", { timeout: 15000 }, (
         });
     });
 });
-

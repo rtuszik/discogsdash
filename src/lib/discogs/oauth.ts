@@ -1,6 +1,6 @@
 import OAuth from "oauth-1.0a";
 import { getSetting, setSetting } from "../db";
-import { withRetry, createDiscogsRetryOptions } from "../retryUtils";
+import { createDiscogsRetryOptions, withRetry } from "../retryUtils";
 
 const DISCOGS_API_BASE_URL = "https://api.discogs.com";
 const REQUEST_TOKEN_URL = "https://api.discogs.com/oauth/request_token";
@@ -12,9 +12,8 @@ interface OAuthTokens {
     secret: string;
 }
 
-
 // Simple file-based storage for request tokens (better than memory for Docker containers)
-import { writeFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const TOKEN_STORAGE_DIR = "/tmp/oauth-tokens";
@@ -24,8 +23,7 @@ function ensureStorageDir() {
         mkdirSync(TOKEN_STORAGE_DIR, { recursive: true });
     } catch (err: unknown) {
         // Only ignore directory already exists errors
-        if (err && typeof err === 'object' && 'code' in err &&
-            (err.code === 'EEXIST' || err.code === 'EISDIR')) {
+        if (err && typeof err === "object" && "code" in err && (err.code === "EEXIST" || err.code === "EISDIR")) {
             return; // Directory already exists, this is fine
         }
         // Log and rethrow other errors (permissions, ENOSPC, etc.)
@@ -95,7 +93,10 @@ export class DiscogsOAuth {
                 };
             }
         } catch (error) {
-            console.error("Error retrieving stored OAuth tokens:", error instanceof Error ? error.message : "Unknown error");
+            console.error(
+                "Error retrieving stored OAuth tokens:",
+                error instanceof Error ? error.message : "Unknown error",
+            );
         }
         return null;
     }
@@ -120,7 +121,10 @@ export class DiscogsOAuth {
                 },
             };
 
-            const authHeaders = this.oauth.toHeader(this.oauth.authorize(requestData)) as unknown as Record<string, string>;
+            const authHeaders = this.oauth.toHeader(this.oauth.authorize(requestData)) as unknown as Record<
+                string,
+                string
+            >;
 
             console.log("🔑 Making OAuth request token request...");
 
@@ -137,10 +141,14 @@ export class DiscogsOAuth {
                 console.error("OAuth request failed:", response.status, response.statusText, errorBody);
 
                 if (response.status === 401) {
-                    throw new Error(`Unauthorized: Invalid consumer key or secret. Please check your DISCOGS_CONSUMER_KEY and DISCOGS_CONSUMER_SECRET environment variables. Make sure you have registered your application at https://www.discogs.com/settings/developers`);
+                    throw new Error(
+                        `Unauthorized: Invalid consumer key or secret. Please check your DISCOGS_CONSUMER_KEY and DISCOGS_CONSUMER_SECRET environment variables. Make sure you have registered your application at https://www.discogs.com/settings/developers`,
+                    );
                 }
 
-                throw new Error(`Failed to get request token: ${response.status} ${response.statusText} - ${errorBody}`);
+                throw new Error(
+                    `Failed to get request token: ${response.status} ${response.statusText} - ${errorBody}`,
+                );
             }
 
             const responseText = await response.text();
@@ -167,11 +175,7 @@ export class DiscogsOAuth {
         return getRequestTokenSecret(requestToken);
     }
 
-    async getAccessToken(
-        requestToken: string,
-        requestTokenSecret: string,
-        verifier: string,
-    ): Promise<OAuthTokens> {
+    async getAccessToken(requestToken: string, requestTokenSecret: string, verifier: string): Promise<OAuthTokens> {
         // Separate the token acquisition from token storage to avoid retrying with consumed tokens
         const tokens = await withRetry(async () => {
             const requestData = {
@@ -240,10 +244,7 @@ export class DiscogsOAuth {
         return this.oauth.toHeader(authData) as unknown as Record<string, string>;
     }
 
-    async makeAuthenticatedRequest<T>(
-        endpoint: string,
-        options: { method?: string; body?: unknown } = {},
-    ): Promise<T> {
+    async makeAuthenticatedRequest<T>(endpoint: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
         return withRetry(async () => {
             const tokens = await this.getStoredTokens();
             if (!tokens) {

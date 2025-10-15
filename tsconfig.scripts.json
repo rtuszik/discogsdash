@@ -1,24 +1,14 @@
 {
-  
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    
-    "module": "CommonJS", 
-    "moduleResolution": "Node", 
-    "outDir": "./dist-scripts", 
-    
-    "skipLibCheck": true, 
-    "noEmit": false, 
-    "isolatedModules": false 
-    
-    
-  },
-  
-  "include": [
-    "src/lib/scheduler.ts",
-    "src/lib/syncLogic.ts",
-    "src/lib/db/index.ts",
-    "src/lib/discogs/client.ts"
-  ]
-  
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "outDir": "./dist-scripts",
+
+        "skipLibCheck": true,
+        "noEmit": false,
+        "isolatedModules": false
+    },
+
+    "include": ["src/lib/scheduler.ts", "src/lib/syncLogic.ts", "src/lib/db/index.ts", "src/lib/discogs/client.ts"]
 }

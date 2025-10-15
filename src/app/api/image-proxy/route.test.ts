@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { GET } from "./route";
 import { NextRequest } from "next/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GET } from "./route";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -23,8 +23,7 @@ const createMockImageResponse = (
         },
         text: async () => (typeof body === "string" ? body : ""),
 
-        blob: async () =>
-            body instanceof Blob ? body : new Blob([typeof body === "string" ? body : ""]),
+        blob: async () => (body instanceof Blob ? body : new Blob([typeof body === "string" ? body : ""])),
         arrayBuffer: async () => (body instanceof ArrayBuffer ? body : new ArrayBuffer(0)),
         formData: async () => new FormData(),
 
@@ -92,9 +91,7 @@ describe("API Route: /api/image-proxy", () => {
 
         expect(response.status).toBe(400);
         expect(data.message).toBe("Invalid image URL provided");
-        expect(warnSpy).toHaveBeenCalledWith(
-            "Invalid image URL requested: http://example.com/image.jpg",
-        );
+        expect(warnSpy).toHaveBeenCalledWith("Invalid image URL requested: http://example.com/image.jpg");
     });
 
     it("should return 400 if url parameter is local", async () => {
@@ -140,17 +137,13 @@ describe("API Route: /api/image-proxy", () => {
         expect(actualFetchRequest.headers.get("User-Agent")).toEqual(expect.any(String));
 
         expect(logSpy).toHaveBeenCalledWith(`Proxying image request for: ${imageUrl}`);
-        expect(logSpy).toHaveBeenCalledWith(
-            `Successfully fetched and streaming image from: ${imageUrl}`,
-        );
+        expect(logSpy).toHaveBeenCalledWith(`Successfully fetched and streaming image from: ${imageUrl}`);
     });
 
     it("should return proxied status code on fetch failure (e.g., 404)", async () => {
         const imageUrl = "https://i.discogs.com/not-found.jpg";
 
-        mockFetch.mockResolvedValueOnce(
-            createMockImageResponse(404, null, { "content-type": "application/json" }),
-        );
+        mockFetch.mockResolvedValueOnce(createMockImageResponse(404, null, { "content-type": "application/json" }));
 
         const request = createRequest({ url: imageUrl });
         const response = await GET(request);
@@ -165,9 +158,7 @@ describe("API Route: /api/image-proxy", () => {
 
     it("should return 500 status code on fetch server error (e.g., 500)", async () => {
         const imageUrl = "https://i.discogs.com/server-error.jpg";
-        mockFetch.mockResolvedValueOnce(
-            createMockImageResponse(500, null, { "content-type": "text/plain" }),
-        );
+        mockFetch.mockResolvedValueOnce(createMockImageResponse(500, null, { "content-type": "text/plain" }));
 
         const request = createRequest({ url: imageUrl });
         const response = await GET(request);
@@ -198,9 +189,7 @@ describe("API Route: /api/image-proxy", () => {
     it("should return 500 if fetched image has empty body", async () => {
         const imageUrl = "https://i.discogs.com/empty-body.jpg";
 
-        mockFetch.mockResolvedValueOnce(
-            createMockImageResponse(200, null, { "content-type": "image/png" }),
-        );
+        mockFetch.mockResolvedValueOnce(createMockImageResponse(200, null, { "content-type": "image/png" }));
 
         const request = createRequest({ url: imageUrl });
         const response = await GET(request);
@@ -208,9 +197,6 @@ describe("API Route: /api/image-proxy", () => {
 
         expect(response.status).toBe(500);
         expect(data.message).toBe("Image fetch succeeded but response body was empty");
-        expect(errorSpy).toHaveBeenCalledWith(
-            `Fetched image from ${imageUrl} but response body was null.`,
-        );
+        expect(errorSpy).toHaveBeenCalledWith(`Fetched image from ${imageUrl} but response body was null.`);
     });
 });
-

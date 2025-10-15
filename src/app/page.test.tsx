@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, waitFor, act, within } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { http, HttpResponse } from "msw";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "../mocks/node";
 import DashboardPage from "./page";
 
@@ -43,9 +43,7 @@ vi.mock("@/components/ValuableItemsList", () => ({
     default: ({ title }: { title: string }) => <div data-testid="items-list">{title}</div>,
 }));
 vi.mock("next/image", () => ({
-    default: ({ src, alt }: { src: string; alt: string }) => (
-        <img src={src} alt={alt} data-testid="next-image" />
-    ),
+    default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} data-testid="next-image" />,
 }));
 
 describe("DashboardPage Component", { timeout: 20000 }, () => {
@@ -116,11 +114,7 @@ describe("DashboardPage Component", { timeout: 20000 }, () => {
 
     it("should show error message if initial stats fetch fails", async () => {
         const errorMsg = "Failed to connect";
-        server.use(
-            http.get("/api/dashboard-stats", () =>
-                HttpResponse.json({ message: errorMsg }, { status: 500 }),
-            ),
-        );
+        server.use(http.get("/api/dashboard-stats", () => HttpResponse.json({ message: errorMsg }, { status: 500 })));
 
         render(<DashboardPage />);
 
@@ -201,4 +195,3 @@ describe("DashboardPage Component", { timeout: 20000 }, () => {
 
     // Removed tests related to polling outcomes as they were unstable
 });
-

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import TimeSeriesChart from "@/components/TimeSeriesChart";
+import React, { useCallback, useEffect, useState } from "react";
 import DistributionPieChart from "@/components/DistributionPieChart";
-import ValuableItemsList from "@/components/ValuableItemsList";
 import LatestAdditions from "@/components/LatestAdditions";
-import TimeRangeSelector, { TimeRange } from "@/components/TimeRangeSelector";
+import TimeRangeSelector, { type TimeRange } from "@/components/TimeRangeSelector";
+import TimeSeriesChart from "@/components/TimeSeriesChart";
+import ValuableItemsList from "@/components/ValuableItemsList";
 
 interface ValuableItem {
     id: number;
@@ -51,9 +51,9 @@ interface DashboardStats {
     latestAdditions: LatestAddition[];
 }
 
-import type { SyncStatusResponse } from "@/app/api/collection/sync/status/route";
-import type { AuthStatusResponse } from "@/app/api/auth/status/route";
 import Link from "next/link";
+import type { AuthStatusResponse } from "@/app/api/auth/status/route";
+import type { SyncStatusResponse } from "@/app/api/collection/sync/status/route";
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -70,7 +70,7 @@ export default function DashboardPage() {
     });
     const [syncFetchError, setSyncFetchError] = useState<string | null>(null);
     const [finalSyncMessage, setFinalSyncMessage] = useState<string | null>(null);
-    const [timeRange, setTimeRange] = useState<TimeRange>('3m');
+    const [timeRange, setTimeRange] = useState<TimeRange>("3m");
 
     const fetchStats = useCallback(async () => {
         setIsLoading(true);
@@ -96,11 +96,7 @@ export default function DashboardPage() {
             setStats(data);
         } catch (err) {
             console.error("Failed to fetch stats:", err);
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "An unknown error occurred while fetching stats.",
-            );
+            setError(err instanceof Error ? err.message : "An unknown error occurred while fetching stats.");
             setStats(null);
         } finally {
             setIsLoading(false);
@@ -161,8 +157,7 @@ export default function DashboardPage() {
             console.log("Sync initiated via API call.");
         } catch (err) {
             console.error("Sync initiation failed:", err);
-            const errorMessage =
-                err instanceof Error ? err.message : "An unknown error occurred initiating sync.";
+            const errorMessage = err instanceof Error ? err.message : "An unknown error occurred initiating sync.";
             setError(`Sync Error: ${errorMessage}`); // Show general error
             setIsSyncing(false); // Stop syncing process on initiation failure
             setSyncStatus("error");
@@ -197,9 +192,7 @@ export default function DashboardPage() {
                 }
             } catch (err) {
                 console.error("Failed to fetch sync status:", err);
-                setSyncFetchError(
-                    err instanceof Error ? err.message : "Failed to get sync status.",
-                );
+                setSyncFetchError(err instanceof Error ? err.message : "Failed to get sync status.");
                 // Optional: Stop syncing/polling on status fetch error after a few retries?
                 // setIsSyncing(false);
                 // if (intervalId) clearInterval(intervalId);
@@ -236,19 +229,13 @@ export default function DashboardPage() {
             {" "}
             {/* Updated bg and text */}
             <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold text-neutral-100">
-                    Discogs Collection IQ
-                </h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-neutral-100">Discogs Collection IQ</h1>
                 <div className="flex items-center space-x-4">
                     {authLoading ? (
                         <div className="text-neutral-400">Loading...</div>
                     ) : isAuthenticated ? (
                         <>
-                            {username && (
-                                <span className="text-neutral-300 text-sm">
-                                    Welcome, {username}
-                                </span>
-                            )}
+                            {username && <span className="text-neutral-300 text-sm">Welcome, {username}</span>}
                             <button
                                 onClick={handleSync}
                                 disabled={isSyncing}
@@ -280,9 +267,7 @@ export default function DashboardPage() {
             )}
             {/* Ensure final message only shows when sync is NOT running and message exists */}
             {finalSyncMessage && !isSyncing && syncStatus !== "running" && (
-                <div className="mb-4 p-3 bg-green-800 text-green-100 rounded">
-                    {finalSyncMessage}
-                </div>
+                <div className="mb-4 p-3 bg-green-800 text-green-100 rounded">{finalSyncMessage}</div>
             )}
             {/* Show general errors when not syncing or if sync ended in error */}
             {error && (!isSyncing || syncStatus === "error") && (
@@ -300,7 +285,8 @@ export default function DashboardPage() {
                             Welcome to Discogs Collection IQ
                         </h2>
                         <p className="text-neutral-300 mb-8">
-                            Connect your Discogs account to start analyzing your music collection with powerful insights and statistics.
+                            Connect your Discogs account to start analyzing your music collection with powerful insights
+                            and statistics.
                         </p>
                         <div className="space-y-4 text-left text-neutral-400">
                             <div className="flex items-center">
@@ -330,21 +316,14 @@ export default function DashboardPage() {
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Total Items
-                        </h2>{" "}
-                        {/* Updated text */}
-                        <p className="text-3xl font-semibold text-neutral-100">
-                            {stats.totalItems ?? "N/A"}
-                        </p>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Total Items</h2> {/* Updated text */}
+                        <p className="text-3xl font-semibold text-neutral-100">{stats.totalItems ?? "N/A"}</p>{" "}
                         {/* Updated text */}
                     </div>
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Collection Value (Mean)
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Collection Value (Mean)</h2>{" "}
                         {/* Reverted Label */}
                         <p className="text-3xl font-semibold text-neutral-100">
                             {formatCurrency(stats.latestValueMean)}
@@ -354,22 +333,17 @@ export default function DashboardPage() {
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Value Range (Min/Max)
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Value Range (Min/Max)</h2>{" "}
                         {/* Updated text */}
                         <p className="text-xl font-semibold text-neutral-100">
-                            {formatCurrency(stats.latestValueMin)} /{" "}
-                            {formatCurrency(stats.latestValueMax)}
+                            {formatCurrency(stats.latestValueMin)} / {formatCurrency(stats.latestValueMax)}
                         </p>{" "}
                         {/* Updated text */}
                     </div>
                     <div className="bg-neutral-800 p-6 rounded-lg border border-neutral-700">
                         {" "}
                         {/* Replaced shadow with border */}
-                        <h2 className="text-sm font-medium text-neutral-400 mb-1">
-                            Average Value / Item
-                        </h2>{" "}
+                        <h2 className="text-sm font-medium text-neutral-400 mb-1">Average Value / Item</h2>{" "}
                         {/* Updated text */}
                         <p className="text-3xl font-semibold text-neutral-100">
                             {formatCurrency(stats.averageValuePerItem)}
@@ -442,12 +416,9 @@ export default function DashboardPage() {
                         <div className="bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
                             {" "}
                             {/* Replaced shadow with border */}
-                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">
-                                Top Genres
-                            </h2>{" "}
+                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">Top Genres</h2>{" "}
                             {/* Updated text */}
-                            {stats.genreDistribution &&
-                            Object.keys(stats.genreDistribution).length > 0 ? (
+                            {stats.genreDistribution && Object.keys(stats.genreDistribution).length > 0 ? (
                                 <ul className="space-y-2 max-h-60 overflow-y-auto text-sm text-neutral-300">
                                     {" "}
                                     {/* Updated text */}
@@ -456,9 +427,7 @@ export default function DashboardPage() {
                                         .map(([genre, count]) => (
                                             <li key={genre} className="flex justify-between">
                                                 <span>{genre}</span>
-                                                <span className="font-medium text-neutral-500">
-                                                    {count}
-                                                </span>{" "}
+                                                <span className="font-medium text-neutral-500">{count}</span>{" "}
                                                 {/* Updated text */}
                                             </li>
                                         ))}
@@ -485,12 +454,9 @@ export default function DashboardPage() {
                         <div className="bg-neutral-800 p-4 md:p-6 rounded-lg border border-neutral-700">
                             {" "}
                             {/* Replaced shadow with border */}
-                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">
-                                Formats
-                            </h2>{" "}
+                            <h2 className="text-xl font-semibold text-neutral-100 mb-4">Formats</h2>{" "}
                             {/* Updated text */}
-                            {stats.formatDistribution &&
-                            Object.keys(stats.formatDistribution).length > 0 ? (
+                            {stats.formatDistribution && Object.keys(stats.formatDistribution).length > 0 ? (
                                 <ul className="space-y-2 max-h-60 overflow-y-auto text-sm text-neutral-300">
                                     {" "}
                                     {/* Updated text */}
@@ -499,9 +465,7 @@ export default function DashboardPage() {
                                         .map(([format, count]) => (
                                             <li key={format} className="flex justify-between">
                                                 <span>{format}</span>
-                                                <span className="font-medium text-neutral-500">
-                                                    {count}
-                                                </span>{" "}
+                                                <span className="font-medium text-neutral-500">{count}</span>{" "}
                                                 {/* Updated text */}
                                             </li>
                                         ))}

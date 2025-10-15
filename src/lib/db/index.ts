@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 let pool: Pool | null = null;
 
@@ -16,10 +16,18 @@ function getPool(): Pool {
             });
         } else {
             // Use individual POSTGRES_* environment variables
-            const { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_HOST = 'localhost', POSTGRES_PORT = '5432' } = process.env;
+            const {
+                POSTGRES_USER,
+                POSTGRES_PASSWORD,
+                POSTGRES_DB,
+                POSTGRES_HOST = "localhost",
+                POSTGRES_PORT = "5432",
+            } = process.env;
 
             if (!POSTGRES_USER || !POSTGRES_PASSWORD || !POSTGRES_DB) {
-                throw new Error("Either DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB environment variables must be set");
+                throw new Error(
+                    "Either DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB environment variables must be set",
+                );
             }
 
             pool = new Pool({
@@ -85,12 +93,8 @@ export async function initDbSchema(): Promise<void> {
         await client.query(
             `CREATE INDEX IF NOT EXISTS idx_collection_items_release_id ON collection_items(release_id);`,
         );
-        await client.query(
-            `CREATE INDEX IF NOT EXISTS idx_collection_items_artist ON collection_items(artist);`,
-        );
-        await client.query(
-            `CREATE INDEX IF NOT EXISTS idx_collection_items_year ON collection_items(year);`,
-        );
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_collection_items_artist ON collection_items(artist);`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_collection_items_year ON collection_items(year);`);
         await client.query(
             `CREATE INDEX IF NOT EXISTS idx_collection_items_added_date ON collection_items(added_date);`,
         );
@@ -165,10 +169,10 @@ export async function getDb() {
 
 export async function setSetting(key: string, value: string): Promise<void> {
     const db = await getDb();
-    await db.query(
-        "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2",
-        [key, value],
-    );
+    await db.query("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [
+        key,
+        value,
+    ]);
 }
 
 export async function getSetting(key: string): Promise<string | null> {
@@ -203,4 +207,3 @@ export function __resetDbInstanceForTest(): void {
     }
     pool = null;
 }
-

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getDb, setSetting } from "./db";
-import { makeDiscogsRequest, fetchPriceSuggestions } from "./discogs/client";
+import { fetchPriceSuggestions, makeDiscogsRequest } from "./discogs/client";
 
 vi.mock("./db", () => ({
     getDb: vi.fn(),
@@ -132,24 +132,19 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
     it("should fail if DISCOGS_USERNAME is not set", async () => {
         vi.stubEnv("DISCOGS_USERNAME", "");
 
-        await expect(runCollectionSync()).rejects.toThrow(
-            "DISCOGS_USERNAME environment variable not set.",
-        );
+        await expect(runCollectionSync()).rejects.toThrow("DISCOGS_USERNAME environment variable not set.");
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
-        expect(mockedSetSetting).toHaveBeenCalledWith(
-            "sync_last_error",
-            expect.stringContaining("DISCOGS_USERNAME"),
-        );
+        expect(mockedSetSetting).toHaveBeenCalledWith("sync_last_error", expect.stringContaining("DISCOGS_USERNAME"));
         expect(mockedMakeDiscogsRequest).not.toHaveBeenCalled();
         expect(mockedSetSetting).toHaveBeenCalled();
     });
 
     it("should fail if OAuth tokens are not available", async () => {
         // Reset the mock and make it reject with OAuth error
-        mockedMakeDiscogsRequest.mockReset().mockRejectedValue(
-            new Error("No OAuth tokens found. Please complete OAuth authentication first.")
-        );
+        mockedMakeDiscogsRequest
+            .mockReset()
+            .mockRejectedValue(new Error("No OAuth tokens found. Please complete OAuth authentication first."));
 
         await expect(runCollectionSync()).rejects.toThrow(
             "No OAuth tokens found. Please complete OAuth authentication first.",
@@ -159,7 +154,7 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "error");
         expect(mockedSetSetting).toHaveBeenCalledWith(
             "sync_last_error",
-            "No OAuth tokens found. Please complete OAuth authentication first."
+            "No OAuth tokens found. Please complete OAuth authentication first.",
         );
     });
 
@@ -200,8 +195,8 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         expect(mockClientQuery).toHaveBeenCalledTimes(4);
 
         // Check that the INSERT INTO collection_items was called with correct data
-        const itemInsertCalls = mockClientQuery.mock.calls.filter(call =>
-            call[0].includes("INSERT INTO collection_items")
+        const itemInsertCalls = mockClientQuery.mock.calls.filter((call) =>
+            call[0].includes("INSERT INTO collection_items"),
         );
         expect(itemInsertCalls).toHaveLength(2);
 
@@ -246,16 +241,10 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         ]);
 
         // Check stats history insert
-        const statsInsertCall = mockClientQuery.mock.calls.find(call =>
-            call[0].includes("INSERT INTO collection_stats_history")
+        const statsInsertCall = mockClientQuery.mock.calls.find((call) =>
+            call[0].includes("INSERT INTO collection_stats_history"),
         );
-        expect(statsInsertCall[1]).toEqual([
-            expect.any(String),
-            2,
-            10.0,
-            15.5,
-            25.0,
-        ]);
+        expect(statsInsertCall[1]).toEqual([expect.any(String), 2, 10.0, 15.5, 25.0]);
 
         expect(errorSpy).not.toHaveBeenCalled();
     });
@@ -270,15 +259,13 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "idle");
         expect(errorSpy).toHaveBeenCalledWith(
-            expect.stringContaining(
-                `Failed to fetch price suggestions for release ID ${MOCK_RELEASE_2.id}`,
-            ),
+            expect.stringContaining(`Failed to fetch price suggestions for release ID ${MOCK_RELEASE_2.id}`),
             expect.any(Error),
         );
 
         // Check that the second item was inserted with null price value
-        const itemInsertCalls = mockClientQuery.mock.calls.filter(call =>
-            call[0].includes("INSERT INTO collection_items")
+        const itemInsertCalls = mockClientQuery.mock.calls.filter((call) =>
+            call[0].includes("INSERT INTO collection_items"),
         );
         expect(itemInsertCalls[1][1]).toEqual([
             MOCK_RELEASE_2.instance_id,
@@ -311,22 +298,13 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         await runCollectionSync();
 
         expect(mockedSetSetting).toHaveBeenCalledWith("sync_status", "idle");
-        expect(errorSpy).toHaveBeenCalledWith(
-            "Could not fetch overall collection value:",
-            expect.any(Error),
-        );
+        expect(errorSpy).toHaveBeenCalledWith("Could not fetch overall collection value:", expect.any(Error));
 
         // Check stats history insert with null values
-        const statsInsertCall = mockClientQuery.mock.calls.find(call =>
-            call[0].includes("INSERT INTO collection_stats_history")
+        const statsInsertCall = mockClientQuery.mock.calls.find((call) =>
+            call[0].includes("INSERT INTO collection_stats_history"),
         );
-        expect(statsInsertCall[1]).toEqual([
-            expect.any(String),
-            2,
-            null,
-            null,
-            null,
-        ]);
+        expect(statsInsertCall[1]).toEqual([expect.any(String), 2, null, null, null]);
     });
 
     it("should handle errors during collection fetching and set error status", async () => {
@@ -343,4 +321,3 @@ describe("runCollectionSync (src/lib/syncLogic.ts)", () => {
         expect(mockTransaction).not.toHaveBeenCalled();
     });
 });
-

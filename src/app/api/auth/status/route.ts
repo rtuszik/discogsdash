@@ -25,9 +25,9 @@ export async function GET() {
         return NextResponse.json(
             {
                 isAuthenticated: false,
-                error: "Failed to check authentication status"
+                error: "Failed to check authentication status",
             },
-            { status: 500 }
+            { status: 500 },
         );
     }
 }

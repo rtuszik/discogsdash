@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function OAuthSetupPage() {
     const [step, setStep] = useState<"initial" | "authorizing" | "verifying" | "complete" | "error">("initial");
@@ -85,12 +85,8 @@ export default function OAuthSetupPage() {
     return (
         <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h1 className="mt-6 text-center text-3xl font-bold text-neutral-100">
-                    Discogs Collection IQ
-                </h1>
-                <h2 className="mt-4 text-center text-xl font-semibold text-neutral-300">
-                    OAuth Setup
-                </h2>
+                <h1 className="mt-6 text-center text-3xl font-bold text-neutral-100">Discogs Collection IQ</h1>
+                <h2 className="mt-4 text-center text-xl font-semibold text-neutral-300">OAuth Setup</h2>
                 <p className="mt-2 text-center text-sm text-neutral-400">
                     Connect your Discogs account to enable collection syncing
                 </p>
@@ -102,7 +98,8 @@ export default function OAuthSetupPage() {
                         <div className="space-y-6">
                             <div>
                                 <p className="text-sm text-neutral-300">
-                                    To sync your Discogs collection, you need to authorize this application to access your account.
+                                    To sync your Discogs collection, you need to authorize this application to access
+                                    your account.
                                 </p>
                             </div>
                             <button
@@ -142,7 +139,10 @@ export default function OAuthSetupPage() {
                             )}
 
                             <div>
-                                <label htmlFor="verificationCode" className="block text-sm font-medium text-neutral-300">
+                                <label
+                                    htmlFor="verificationCode"
+                                    className="block text-sm font-medium text-neutral-300"
+                                >
                                     Verification Code
                                 </label>
                                 <input
@@ -188,7 +188,8 @@ export default function OAuthSetupPage() {
                                 <div className="text-green-400 text-4xl mb-4">✓</div>
                                 <h3 className="text-lg font-medium text-neutral-100">Setup Complete!</h3>
                                 <p className="mt-2 text-sm text-neutral-300">
-                                    Successfully connected to Discogs account: <strong className="text-neutral-100">{username}</strong>
+                                    Successfully connected to Discogs account:{" "}
+                                    <strong className="text-neutral-100">{username}</strong>
                                 </p>
                                 <p className="mt-2 text-sm text-neutral-300">
                                     You can now close this page and your collection will sync automatically.

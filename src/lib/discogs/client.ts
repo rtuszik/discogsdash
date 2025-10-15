@@ -1,5 +1,5 @@
+import { createDiscogsRetryOptions, withRetry } from "../retryUtils";
 import { DiscogsOAuth } from "./oauth";
-import { withRetry, createDiscogsRetryOptions } from "../retryUtils";
 
 const DISCOGS_API_BASE_URL = "https://api.discogs.com";
 
@@ -18,10 +18,7 @@ function getOAuthClient(): DiscogsOAuth {
     return oauthClient;
 }
 
-export async function makeDiscogsRequest<T>(
-    endpoint: string,
-    options: DiscogsRequestOptions = {},
-): Promise<T> {
+export async function makeDiscogsRequest<T>(endpoint: string, options: DiscogsRequestOptions = {}): Promise<T> {
     return withRetry(async () => {
         const oauth = getOAuthClient();
         const tokens = await oauth.getStoredTokens();
@@ -80,9 +77,7 @@ interface PriceSuggestion {
 
 type PriceSuggestionsResponse = Record<string, PriceSuggestion>;
 
-export async function fetchPriceSuggestions(
-    releaseId: number,
-): Promise<PriceSuggestionsResponse | null> {
+export async function fetchPriceSuggestions(releaseId: number): Promise<PriceSuggestionsResponse | null> {
     const endpoint = `/marketplace/price_suggestions/${releaseId}`;
     try {
         const suggestions = await makeDiscogsRequest<PriceSuggestionsResponse>(endpoint);
@@ -97,4 +92,3 @@ export async function fetchPriceSuggestions(
         throw error;
     }
 }
-

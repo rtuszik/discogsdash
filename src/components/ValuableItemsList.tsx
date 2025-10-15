@@ -1,5 +1,5 @@
-import React from "react";
 import Image from "next/image"; // Use Next.js Image for optimization
+import React from "react";
 
 // Define the structure for a single item in the list
 // Matches the ValuableItem interface from the API route
@@ -22,11 +22,7 @@ interface ValuableItemsListProps {
 // Placeholder image URL (replace with a local or better remote placeholder if desired)
 const PLACEHOLDER_IMAGE = "/file.svg"; // Assuming file.svg exists in public
 
-export default function ValuableItemsList({
-    title,
-    items,
-    currencyFormatter,
-}: ValuableItemsListProps) {
+export default function ValuableItemsList({ title, items, currencyFormatter }: ValuableItemsListProps) {
     if (!items || items.length === 0) {
         return (
             <div className="bg-neutral-800 p-4 md:p-6 rounded-lg shadow-md">
@@ -48,9 +44,7 @@ export default function ValuableItemsList({
                         className="flex items-center space-x-3 p-2 rounded hover:bg-neutral-700 transition-colors duration-150"
                     >
                         {/* Rank */}
-                        <span className="text-sm font-medium text-neutral-500 w-6 text-right">
-                            {index + 1}.
-                        </span>
+                        <span className="text-sm font-medium text-neutral-500 w-6 text-right">{index + 1}.</span>
 
                         {/* Artwork */}
                         <div className="flex-shrink-0 w-12 h-12 bg-neutral-700 rounded overflow-hidden relative">
@@ -78,15 +72,10 @@ export default function ValuableItemsList({
                             >
                                 {item.title || "Unknown Title"}
                             </p>
-                            <p
-                                className="text-xs text-neutral-400 truncate"
-                                title={item.artist || "Unknown Artist"}
-                            >
+                            <p className="text-xs text-neutral-400 truncate" title={item.artist || "Unknown Artist"}>
                                 {item.artist || "Unknown Artist"}
                             </p>
-                            {item.condition && (
-                                <p className="text-xs text-neutral-500">Cond: {item.condition}</p>
-                            )}
+                            {item.condition && <p className="text-xs text-neutral-500">Cond: {item.condition}</p>}
                         </div>
 
                         {/* Value */}
@@ -101,4 +90,3 @@ export default function ValuableItemsList({
         </div>
     );
 }
-
