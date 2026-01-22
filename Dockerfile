@@ -27,7 +27,6 @@ RUN npm install pm2 -g
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
 
 # Install build dependencies for native modules in runner stage
