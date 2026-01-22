@@ -24,14 +24,6 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            - name: Cache Docker layers
-              uses: actions/cache@v4
-              with:
-                  path: /tmp/.buildx-cache
-                  key: ${{ runner.os }}-buildx-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-buildx-
-
             - name: Build Docker image
               uses: docker/build-push-action@v6
               with:
@@ -40,8 +32,8 @@ jobs:
                   push: false
                   load: true
                   tags: discogsdash:test
-                  cache-from: type=local,src=/tmp/.buildx-cache
-                  cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
             - name: Test Docker image - Verify container starts
               run: |
@@ -89,11 +81,6 @@ jobs:
                   docker stop temp-container
                   docker rm temp-container
 
-            - name: Move cache
-              run: |
-                  rm -rf /tmp/.buildx-cache
-                  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
     docker-build-test-multiplatform:
         runs-on: ubuntu-latest
         permissions:
@@ -110,14 +97,6 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            - name: Cache Docker layers
-              uses: actions/cache@v4
-              with:
-                  path: /tmp/.buildx-cache
-                  key: ${{ runner.os }}-buildx-multi-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-buildx-multi-
-
             - name: Build multi-platform Docker image
               uses: docker/build-push-action@v6
               with:
@@ -125,10 +104,5 @@ jobs:
                   platforms: linux/amd64,linux/arm64
                   push: false
                   tags: discogsdash:test-multi
-                  cache-from: type=local,src=/tmp/.buildx-cache
-                  cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-            - name: Move cache
-              run: |
-                  rm -rf /tmp/.buildx-cache
-                  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
