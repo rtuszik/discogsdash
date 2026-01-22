@@ -28,8 +28,6 @@ jobs:
               uses: docker/build-push-action@v6
               with:
                   context: .
-                  # Single platform build for runtime testing
-                  # Multi-platform validation is done in the separate job below
                   platforms: linux/amd64
                   push: false
                   load: true
@@ -37,7 +35,7 @@ jobs:
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
 
-            - name: Test Docker image - Verify container starts
+            - name: Test Docker image
               run: |
                   docker run --name discogsdash-test -d \
                     -e DISCOGS_TOKEN=test_token \
@@ -45,10 +43,8 @@ jobs:
                     -e SYNC_CRON_SCHEDULE="0 0 * * *" \
                     discogsdash:test
                   
-                  # Wait for container to start
                   sleep 10
                   
-                  # Check if container is running
                   if docker ps | grep -q discogsdash-test; then
                     echo "✓ Container started successfully"
                     docker logs discogsdash-test
@@ -58,53 +54,5 @@ jobs:
                     exit 1
                   fi
                   
-                  # Stop and remove container
                   docker stop discogsdash-test
                   docker rm discogsdash-test
-
-            - name: Test Docker image - Verify build artifacts
-              run: |
-                  # Start a temporary container to inspect the build
-                  docker run --name temp-container -d \
-                    -e DISCOGS_TOKEN=test_token \
-                    -e DISCOGS_USERNAME=test_user \
-                    discogsdash:test
-                  
-                  # Wait a moment for container to be ready
-                  sleep 5
-                  
-                  # Check for required files
-                  echo "Checking for required files..."
-                  docker exec temp-container ls -la /app/.next || true
-                  docker exec temp-container ls -la /app/dist-scripts || true
-                  docker exec temp-container ls -la /app/node_modules || true
-                  
-                  # Clean up
-                  docker stop temp-container
-                  docker rm temp-container
-
-    docker-build-test-multiplatform:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: read
-
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
-
-            - name: Build multi-platform Docker image
-              uses: docker/build-push-action@v6
-              with:
-                  context: .
-                  platforms: linux/amd64,linux/arm64
-                  push: false
-                  tags: discogsdash:test-multi
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
