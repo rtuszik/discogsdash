@@ -121,6 +121,22 @@ Your collection data is stored in PostgreSQL with a Docker volume named `postgre
 -   [PM2](https://github.com/Unitech/pm2) (Process Manager within Docker)
 -   [Docker](https://www.docker.com/) / [Docker Compose](https://docs.docker.com/compose/)
 
+## CI/CD & Testing
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+-   **Docker Build Test** (`.github/workflows/docker-build-test.yml`): Automatically tests Docker builds on pull requests and pushes to the dev branch. This workflow:
+    -   Builds the Docker image using the multi-stage Dockerfile
+    -   Validates that the container starts successfully
+    -   Verifies required build artifacts are present
+    -   Tests both single-platform (amd64) and multi-platform (amd64/arm64) builds
+    -   Uses layer caching to speed up builds
+    -   Runs automatically on Dependabot dependency update PRs
+
+-   **Publish Docker Image** (`.github/workflows/publish.yml`): Builds and publishes multi-arch Docker images to GitHub Container Registry (GHCR) when manually triggered.
+
+-   **Dependabot**: Configured to automatically check for dependency updates weekly for npm packages, GitHub Actions, and Docker base images.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
