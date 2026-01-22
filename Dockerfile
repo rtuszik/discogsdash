@@ -30,6 +30,8 @@ COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
 
+# Install build dependencies for native modules in runner stage
+RUN apk add --no-cache python3 make gcc g++ musl-dev
 
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/package-lock.json* ./
