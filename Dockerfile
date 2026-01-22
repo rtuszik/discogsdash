@@ -41,7 +41,8 @@ COPY --from=builder /app/src ./src
 RUN npm run build:scripts
 RUN chown -R node:node ./dist-scripts
 RUN npm prune --omit=dev && \
-    rm -rf src tsconfig*.json # Keep package.json and package-lock.json for npm run start
+    rm -rf src tsconfig*.json && \
+    apk del python3 make gcc g++ musl-dev # Remove build dependencies to reduce image size
 
 
 USER node
