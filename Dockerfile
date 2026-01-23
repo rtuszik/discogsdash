@@ -1,9 +1,6 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 
-# Install build dependencies for native modules (better-sqlite3)
-RUN apk add --no-cache python3 make gcc g++ musl-dev
-
 COPY package.json package-lock.json* ./
 
 RUN npm ci
@@ -27,24 +24,20 @@ RUN npm install pm2 -g
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/ecosystem.config.js ./ecosystem.config.js
+
+
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/package-lock.json* ./
-
-# Copy already-built node_modules from deps stage to avoid rebuilding native modules
-COPY --from=deps /app/node_modules ./node_modules
-
-# Install build dependencies temporarily for building scripts
-RUN apk add --no-cache python3 make gcc g++ musl-dev
-
+RUN npm install --omit=dev
 RUN npm install --include=dev typescript @types/node @types/pg @types/node-cron
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/src ./src
 RUN npm run build:scripts
 RUN chown -R node:node ./dist-scripts
 RUN npm prune --omit=dev && \
-    rm -rf src tsconfig*.json && \
-    apk del python3 make gcc g++ musl-dev # Remove build dependencies to reduce image size
+    rm -rf src tsconfig*.json # Keep package.json and package-lock.json for npm run start
 
 
 USER node

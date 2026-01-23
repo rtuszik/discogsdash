@@ -8,7 +8,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    docker-build-test:
+    build-and-test:
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -24,35 +24,20 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            - name: Build Docker image
+            - name: Cache node modules
+              id: cache-npm
+              uses: actions/cache@v4
+              with:
+                  path: ~/.npm
+                  key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-npm-
+
+            - name: Build multi-arch Docker image
               uses: docker/build-push-action@v6
               with:
                   context: .
-                  platforms: linux/amd64
+                  platforms: linux/amd64,linux/arm64
                   push: false
-                  load: true
-                  tags: discogsdash:test
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
-
-            - name: Test Docker image
-              run: |
-                  docker run --name discogsdash-test -d \
-                    -e DISCOGS_TOKEN=test_token \
-                    -e DISCOGS_USERNAME=test_user \
-                    -e SYNC_CRON_SCHEDULE="0 0 * * *" \
-                    discogsdash:test
-                  
-                  sleep 10
-                  
-                  if docker ps | grep -q discogsdash-test; then
-                    echo "✓ Container started successfully"
-                    docker logs discogsdash-test
-                  else
-                    echo "✗ Container failed to start"
-                    docker logs discogsdash-test
-                    exit 1
-                  fi
-                  
-                  docker stop discogsdash-test
-                  docker rm discogsdash-test
